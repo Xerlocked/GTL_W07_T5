@@ -107,7 +107,7 @@ struct FObjMaterialInfo
     FString SpecularTextureName; // map_Ks : Specular texture
     FWString SpecularTexturePath;
 
-    FString BumpTextureName;     // map_Bump : Bump texture
+    FString BumpTextureName = "";     // map_Bump : Bump texture
     FWString BumpTexturePath;
 
     FString AlphaTextureName;    // map_d : Alpha texture
