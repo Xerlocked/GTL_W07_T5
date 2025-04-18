@@ -29,12 +29,12 @@ struct FPointLightInfo
     float4 LightColor;
 
     float3 Position;
-    float Radius;
+    float AttenuationRadius;
 
     int Type;
     float Intensity;
-    float Attenuation;
-    float Padding;
+    float Falloff;
+    float Pad;
 };
 
 struct FSpotLightInfo
@@ -42,15 +42,15 @@ struct FSpotLightInfo
     float4 LightColor;
 
     float3 Position;
-    float Radius;
+    float AttenuationRadius;
 
     float3 Direction;
     float Intensity;
 
     int Type;
-    float InnerRad;
-    float OuterRad;
-    float Attenuation;
+    float InnerRad; // degree
+    float OuterRad; // degree
+    float Falloff;
 };
 
 cbuffer Lighting : register(b0)
@@ -66,17 +66,29 @@ cbuffer Lighting : register(b0)
     int AmbientLightsCount;
 };
 
-float CalculateAttenuation(float Distance, float AttenuationFactor, float Radius)
+float CalculateAttenuation(float Distance, float AttenuationRadius, float Falloff)
 {
-    if (Distance > Radius)
+    if (Distance > AttenuationRadius)
     {
         return 0.0;
     }
 
-    float Falloff = 1.0 / (1.0 + AttenuationFactor * Distance * Distance);
-    float SmoothFactor = (1.0 - (Distance / Radius)); // 부드러운 falloff
+    float Result = saturate(1.0f - Distance / AttenuationRadius);
+    Result = pow(Result, Falloff);
+    
+    return Result;
+}
 
-    return Falloff * SmoothFactor;
+float CalculateConeAttenuation(float3 LightDir, float3 SpotDir, float AttenuationRadius, float Falloff, float InnerConeAngle, float OuterConeAngle)
+{
+    float CosAngle = dot(SpotDir, -LightDir);
+    float Outer = cos(radians(OuterConeAngle / 2));
+    float Inner = cos(radians(InnerConeAngle / 2));
+
+    float ConeAttenuation = saturate((CosAngle - Outer) / (Inner - Outer));
+    ConeAttenuation = pow(ConeAttenuation, Falloff);
+
+    return (CosAngle < 0.0f) ? 0.0f : AttenuationRadius * ConeAttenuation;
 }
 
 float CalculateSpotEffect(float3 LightDir, float3 SpotDir, float InnerRadius, float OuterRadius, float SpotFalloff)
@@ -112,7 +124,7 @@ float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float Wor
     float3 ToLight = LightInfo.Position - WorldPosition;
     float Distance = length(ToLight);
     
-    float Attenuation = CalculateAttenuation(Distance, LightInfo.Attenuation, LightInfo.Radius);
+    float Attenuation = CalculateAttenuation(Distance, LightInfo.AttenuationRadius, LightInfo.Falloff);
     if (Attenuation <= 0.0)
     {
         return float4(0.f, 0.f, 0.f, 0.f);
@@ -138,18 +150,10 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float3 ToLight = LightInfo.Position - WorldPosition;
     float Distance = length(ToLight);
     
-    float Attenuation = CalculateAttenuation(Distance, LightInfo.Attenuation, LightInfo.Radius);
-    if (Attenuation <= 0.0)
-    {
-        return float4(0.0, 0.0, 0.0, 0.0);
-    }
-    
-    float3 LightDir = normalize(ToLight);
-    float SpotlightFactor = CalculateSpotEffect(LightDir, normalize(LightInfo.Direction), LightInfo.InnerRad, LightInfo.OuterRad, LightInfo.Attenuation);
-    if (SpotlightFactor <= 0.0)
-    {
-        return float4(0.0, 0.0, 0.0, 0.0);
-    }
+    float Attenuation = CalculateAttenuation(Distance, LightInfo.AttenuationRadius, LightInfo.Falloff);
+
+    float3 LightDir = ToLight / Distance;
+    float ConeAttenuation = CalculateConeAttenuation(LightDir, normalize(LightInfo.Direction), LightInfo.AttenuationRadius, LightInfo.Falloff, LightInfo.InnerRad, LightInfo.OuterRad);
     
     float DiffuseFactor = CalculateDiffuse(WorldNormal, LightDir);
     
@@ -161,7 +165,7 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
 #endif
     
-    return float4(Lit * Attenuation * SpotlightFactor * LightInfo.Intensity, 1.0);
+    return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity, 1.0);
 }
 
 float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
@@ -204,7 +208,7 @@ float4 Lighting(float3 WorldPosition, float3 WorldNormal, float3 WorldViewPositi
     [unroll(MAX_AMBIENT_LIGHT)]
     for (int l = 0; l < AmbientLightsCount; l++)
     {
-        FinalColor += float4(Ambient[l].AmbientColor.rgb, 0.0);
+        FinalColor += float4(Ambient[l].AmbientColor.rgb*DiffuseColor, 0.0);
         FinalColor.a = 1.0;
     }
     

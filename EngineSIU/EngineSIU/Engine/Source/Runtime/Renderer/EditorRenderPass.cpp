@@ -310,18 +310,20 @@ void FEditorRenderPass::CreateBuffers()
     // Cone 버퍼 생성
     // 0,0,0이 Apex
     // z=1이고, xy에서 r=1인 원이 밑변
-    constexpr uint32 NumSegments = 32;
     TArray<FVector> ConeVertices;
-    ConeVertices.Add({ 0.0f, 0.0f, 0.0f }); // Apex
+    ConeVertices.Add({0.0f, 0.0f, 0.0f}); // Apex
     for (int i = 0; i < NumSegments; i++)
     {
-        float angle = 2.0f * 3.1415926535897932f * i / (float)NumSegments;
-        float x = cos(angle);
-        float y = sin(angle);
-        ConeVertices.Add({ x, y, 1.0f }); // Bottom
+        // hlsl 내부에서 계산
+        //float angle = 2.0f * 3.1415926535897932f * i / (float)NuzmSegments;
+        //float x = cos(angle);
+        //float y = sin(angle);
+        float x = 0;
+        float y = 0;
+        ConeVertices.Add({x, y, 1.0f}); // Bottom
     }
     TArray<uint32> ConeIndices;
-    constexpr uint32 vertexOffset0 = 1;
+    uint32 vertexOffset0 = 1;
     // apex -> 밑면으로 가는 line
     for (int i = 0; i < NumSegments; i++)
     {
@@ -337,31 +339,35 @@ void FEditorRenderPass::CreateBuffers()
 
     // cone을 덮는 sphere
     // xz plane
-    float deltaAngle = 2.0f * 3.1415926535897932f / (float)NumSegments;
-    float offsetAngle = deltaAngle * NumSegments / 8; // 45도 부터 시작
-    for (int i = 0; i < NumSegments / 4 + 1; i++)
+    //float deltaAngle = 2.0f * 3.1415926535897932f / (float)NumSegments;
+    //float offsetAngle = deltaAngle * NumSegments / 8; // 45도 부터 시작
+    for (int i = 0; i < NumSegments + 1; i++)
     {
-        float angle = 2.0f * 3.1415926535897932f * i / (float)NumSegments + offsetAngle;
-        float x = cos(angle) * sqrt(2.f);
-        float z = sin(angle) * sqrt(2.f);
+        //float angle = 2.0f * 3.1415926535897932f * i / (float)NumSegments + offsetAngle;
+        //float x = cos(angle) * sqrt(2.f);
+        //float z = sin(angle) * sqrt(2.f);
+        float x = 0;
+        float z = 0;
         ConeVertices.Add({ x, 0, z });
     }
-    constexpr uint32 vertexOffset1 = NumSegments + vertexOffset0;
-    for (int i = 0; i < NumSegments / 4; i++)
+    uint32 vertexOffset1 = NumSegments + vertexOffset0;
+    for (int i = 0; i < NumSegments; i++)
     {
         ConeIndices.Add(vertexOffset1 + i);
         ConeIndices.Add(vertexOffset1 + (i + 1));
     }
     // yz plane
-    for (int i = 0; i < NumSegments / 4 + 1; i++)
+    for (int i = 0; i < NumSegments + 1; i++)
     {
-        float angle = 2.0f * 3.1415926535897932f * i / (float)NumSegments + offsetAngle;
-        float y = cos(angle) * sqrt(2.f);
-        float z = sin(angle) * sqrt(2.f);
+        //float angle = 2.0f * 3.1415926535897932f * i / (float)NumSegments + offsetAngle;
+        //float y = cos(angle) * sqrt(2.f);
+        //float z = sin(angle) * sqrt(2.f);
+        float y = 0;
+        float z = 0;
         ConeVertices.Add({ 0, y, z });
     }
-    constexpr uint32 vertexOffset2 = NumSegments / 4 + 1 + vertexOffset1;
-    for (int i = 0; i < NumSegments / 4; i++)
+    uint32 vertexOffset2 = NumSegments + 1 + vertexOffset1;
+    for (int i = 0; i < NumSegments; i++)
     {
         ConeIndices.Add(vertexOffset2 + i);
         ConeIndices.Add(vertexOffset2 + (i + 1));
@@ -587,7 +593,7 @@ void FEditorRenderPass::RenderPointlightInstanced()
         {
             FConstantBufferDebugSphere b;
             b.Position = PointLightComp->GetWorldLocation();
-            b.Radius = PointLightComp->GetRadius();
+            b.Radius = PointLightComp->GetAttenuationRadius();
             BufferAll.Add(b);
         }
 
@@ -653,6 +659,8 @@ void FEditorRenderPass::RenderSpotlightInstanced()
     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &Resources.Primitives.Cone.Vertex, &Resources.Primitives.Cone.VertexStride, &offset);
     Graphics->DeviceContext->IASetIndexBuffer(Resources.Primitives.Cone.Index, DXGI_FORMAT_R32_UINT, 0);
 
+    constexpr FLinearColor OuterColor = FLinearColor(149.f/255.f, 198.f/255.f, 255.f/255.f, 255.f/255.f);
+    constexpr FLinearColor InnerColor = FLinearColor(0.777f, 1.0f, 1.0f, 1.0f);
     // 위치랑 bounding box 크기 정보 가져오기
     TArray<FConstantBufferDebugCone> BufferAll;
     for (ULightComponentBase* LightComp : Resources.Components.Light)
@@ -660,12 +668,15 @@ void FEditorRenderPass::RenderSpotlightInstanced()
         if (USpotLightComponent* SpotComp = Cast<USpotLightComponent>(LightComp))
         {
             FConstantBufferDebugCone b;
-            b.ApexPosiiton = SpotComp->GetWorldLocation();
-            b.InnerRadius = SpotComp->GetRadius()*  FMath::Tan(SpotComp->GetInnerRad() * 0.5);
-            b.OuterRadius = SpotComp->GetRadius() * FMath::Tan(SpotComp->GetOuterRad() * 0.5);
-            b.Height = SpotComp->GetRadius();
+            b.ApexPosition = SpotComp->GetWorldLocation();
+            b.Radius = SpotComp->GetAttenuationRadius();
             b.Direction = SpotComp->GetDirection();
+            b.Angle = FMath::DegreesToRadians(SpotComp->GetInnerDegree() / 2);
+            b.Color = InnerColor;
             BufferAll.Add(b);
+            
+            b.Angle = FMath::DegreesToRadians(SpotComp->GetOuterDegree() / 2);
+            b.Color = OuterColor;
             BufferAll.Add(b);
         }
     }
@@ -692,7 +703,7 @@ void FEditorRenderPass::RenderSpotlightInstanced()
         {
             UdpateConstantbufferSpotlightInstanced(SubBuffer);
 
-            Graphics->DeviceContext->DrawIndexedInstanced(Resources.Primitives.Cone.NumIndices, SubBuffer.Num(), 0, 0, 0);
+            Graphics->DeviceContext->DrawIndexedInstanced(Resources.Primitives.Cone.NumIndices, 2, 0, 0, 0);
         }
     }
 }

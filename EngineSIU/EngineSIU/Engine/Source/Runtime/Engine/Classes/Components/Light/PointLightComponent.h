@@ -12,8 +12,8 @@ public:
     const FPointLightInfo& GetPointLightInfo() const;
     void SetPointLightInfo(const FPointLightInfo& InPointLightInfo);
 
-    float GetRadius() const;
-    void SetRadius(float InRadius);
+    float GetAttenuationRadius() const;
+    void SetAttenuationRadius(float InRadius);
 
     FLinearColor GetLightColor() const;
     void SetLightColor(const FLinearColor& InColor);
@@ -24,6 +24,9 @@ public:
 
     int GetType() const;
     void SetType(int InType);
+
+    float GetFalloff() const;
+    void SetFalloff(float InFalloff);
 
 private:
     FPointLightInfo PointLightInfo;

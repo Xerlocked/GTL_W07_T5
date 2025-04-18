@@ -4,14 +4,14 @@
 USpotLightComponent::USpotLightComponent()
 {
     SpotLightInfo.Position = GetWorldLocation();
-    SpotLightInfo.Radius = 30.0f;
-    SpotLightInfo.Direction = GetForwardVector();
+    SpotLightInfo.AttenuationRadius = 0.0f;
+    SpotLightInfo.Direction = USceneComponent::GetForwardVector();
     SpotLightInfo.LightColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
     SpotLightInfo.Intensity = 1000.0f;
     SpotLightInfo.Type = ELightType::SPOT_LIGHT;
-    SpotLightInfo.InnerRad = 0.2618;
-    SpotLightInfo.OuterRad = 0.5236;
-    SpotLightInfo.Attenuation = 20.0f;
+    SpotLightInfo.InnerRad = 0;
+    SpotLightInfo.OuterRad = 0;
+    SpotLightInfo.Falloff = 0.01f;
 }
 
 USpotLightComponent::~USpotLightComponent()
@@ -20,9 +20,7 @@ USpotLightComponent::~USpotLightComponent()
 
 FVector USpotLightComponent::GetDirection()
 {
-    FRotator rotator = GetWorldRotation();
-    FVector WorldForward = rotator.ToQuaternion().RotateVector(GetForwardVector());
-    return WorldForward;
+    return GetWorldMatrix().GetAxis(0).GetSafeNormal();
 }
 
 const FSpotLightInfo& USpotLightComponent::GetSpotLightInfo() const
@@ -35,14 +33,14 @@ void USpotLightComponent::SetSpotLightInfo(const FSpotLightInfo& InSpotLightInfo
     SpotLightInfo = InSpotLightInfo;
 }
 
-float USpotLightComponent::GetRadius() const
+float USpotLightComponent::GetAttenuationRadius() const
 {
-    return SpotLightInfo.Radius;
+    return SpotLightInfo.AttenuationRadius;
 }
 
-void USpotLightComponent::SetRadius(float InRadius)
+void USpotLightComponent::SetAttenuationRadius(float InRadius)
 {
-    SpotLightInfo.Radius = InRadius;
+    SpotLightInfo.AttenuationRadius = InRadius;
 }
 
 FLinearColor USpotLightComponent::GetLightColor() const
@@ -54,8 +52,6 @@ void USpotLightComponent::SetLightColor(const FLinearColor& InColor)
 {
     SpotLightInfo.LightColor = InColor;
 }
-
-
 
 float USpotLightComponent::GetIntensity() const
 {
@@ -99,20 +95,38 @@ void USpotLightComponent::SetOuterRad(float InOuterCos)
 
 float USpotLightComponent::GetInnerDegree() const
 {
-    return SpotLightInfo.InnerRad * (180.0f / PI);
+    return SpotLightInfo.InnerRad;
 }
 
 void USpotLightComponent::SetInnerDegree(float InInnerDegree)
 {
-    SpotLightInfo.InnerRad = InInnerDegree * (PI / 180.0f);
+    if (InInnerDegree > GetOuterDegree())
+    {
+        SetOuterDegree(InInnerDegree);
+    }
+    SpotLightInfo.InnerRad = InInnerDegree;
 }
 
 float USpotLightComponent::GetOuterDegree() const
 {
-    return SpotLightInfo.OuterRad * (180 / PI);
+    return SpotLightInfo.OuterRad;
 }
 
 void USpotLightComponent::SetOuterDegree(float InOuterDegree)
 {
-    SpotLightInfo.OuterRad = InOuterDegree * (PI / 180.0f);
+    if (InOuterDegree < GetInnerDegree())
+    {
+        SetInnerDegree(InOuterDegree);
+    }
+    SpotLightInfo.OuterRad = InOuterDegree;
+}
+
+float USpotLightComponent::GetFalloff() const
+{
+    return SpotLightInfo.Falloff;
+}
+
+void USpotLightComponent::SetFalloff(float InFalloff)
+{
+    SpotLightInfo.Falloff = InFalloff;
 }

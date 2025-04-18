@@ -13,8 +13,8 @@ public:
     const FSpotLightInfo& GetSpotLightInfo() const;
     void SetSpotLightInfo(const FSpotLightInfo& InSpotLightInfo);
 
-    float GetRadius() const;
-    void SetRadius(float InRadius);
+    float GetAttenuationRadius() const;
+    void SetAttenuationRadius(float InRadius);
 
     FLinearColor GetLightColor() const;
     void SetLightColor(const FLinearColor& InColor);
@@ -37,7 +37,11 @@ public:
     float GetOuterDegree() const;
     void SetOuterDegree(float InOuterDegree);
 
+    float GetFalloff() const;
+    void SetFalloff(float InFalloff);
+
 private:
     FSpotLightInfo SpotLightInfo;
 };
+
 

@@ -3,13 +3,13 @@
 UPointLightComponent::UPointLightComponent()
 {
     PointLightInfo.Position = GetWorldLocation();
-    PointLightInfo.Radius = 30.f;
+    PointLightInfo.AttenuationRadius = 0.f;
 
     PointLightInfo.LightColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     PointLightInfo.Intensity = 1000.f;
     PointLightInfo.Type = ELightType::POINT_LIGHT;
-    PointLightInfo.Attenuation = 20.0f;
+    PointLightInfo.Falloff = 0.0f;
 }
 
 UPointLightComponent::~UPointLightComponent()
@@ -27,14 +27,14 @@ void UPointLightComponent::SetPointLightInfo(const FPointLightInfo& InPointLight
 }
 
 
-float UPointLightComponent::GetRadius() const
+float UPointLightComponent::GetAttenuationRadius() const
 {
-    return PointLightInfo.Radius;
+    return PointLightInfo.AttenuationRadius;
 }
 
-void UPointLightComponent::SetRadius(float InRadius)
+void UPointLightComponent::SetAttenuationRadius(float InRadius)
 {
-    PointLightInfo.Radius = InRadius;
+    PointLightInfo.AttenuationRadius = InRadius;
 }
 
 FLinearColor UPointLightComponent::GetLightColor() const
@@ -66,4 +66,14 @@ int UPointLightComponent::GetType() const
 void UPointLightComponent::SetType(int InType)
 {
     PointLightInfo.Type = InType;
+}
+
+float UPointLightComponent::GetFalloff() const
+{
+    return PointLightInfo.Falloff;
+}
+
+void UPointLightComponent::SetFalloff(float InFalloff)
+{
+    PointLightInfo.Falloff = InFalloff;
 }

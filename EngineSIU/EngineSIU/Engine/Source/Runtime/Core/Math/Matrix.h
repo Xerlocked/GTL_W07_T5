@@ -40,6 +40,14 @@ public:
     FVector4 TransformFVector4(const FVector4& vector) const;
     FVector TransformPosition(const FVector& vector) const;
 
+    /** 월드 좌표상의 방향 벡터를 가져옵니다.
+     * 
+     *  @param i : 해당 하는 방향 벡터
+     *  
+     *  (0: Forward, 1: Right, 2: Up)
+     */
+    FVector GetAxis(int32 i) const;
+    
     static FMatrix GetScaleMatrix(const FVector& InScale);
     static FMatrix GetTranslationMatrix(const FVector& InPosition);
     static FMatrix GetRotationMatrix(const FRotator& InRotation);

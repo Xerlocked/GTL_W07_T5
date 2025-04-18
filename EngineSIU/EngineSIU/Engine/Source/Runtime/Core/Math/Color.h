@@ -92,7 +92,7 @@ struct FLinearColor
     float B;
     float A;
     FLinearColor() : R(0), G(0), B(0), A(0) {}
-    FLinearColor(float InR, float InG, float InB, float InA = 1.0f) : R(InR), G(InG), B(InB), A(InA) {}
+    constexpr FLinearColor(float InR, float InG, float InB, float InA = 1.0f) : R(InR), G(InG), B(InB), A(InA) {}
     FLinearColor(const FString& SourceString)
         : R(0), G(0), B(0), A(0)
     {

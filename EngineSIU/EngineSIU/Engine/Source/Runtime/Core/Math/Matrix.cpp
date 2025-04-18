@@ -273,6 +273,11 @@ FVector FMatrix::TransformPosition(const FVector& vector) const
     return w != 0.0f ? FVector{x / w, y / w, z / w} : FVector{x, y, z};
 }
 
+FVector FMatrix::GetAxis(int32 i) const
+{
+    return {M[0][i], M[1][i], M[2][i]};
+}
+
 FMatrix FMatrix::GetScaleMatrix(const FVector& InScale)
 {
     return CreateScaleMatrix(InScale.X, InScale.Y, InScale.Z);
