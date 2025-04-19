@@ -20,7 +20,7 @@ UDirectionalLightComponent::~UDirectionalLightComponent()
 FVector UDirectionalLightComponent::GetDirection()  
 {
     FRotator rotator = GetWorldRotation();
-    FVector WorldDown= rotator.ToQuaternion().RotateVector(-GetUpVector());
+    FVector WorldDown = rotator.ToQuaternion().RotateVector(-GetUpVector());
     return WorldDown;  
 }
 

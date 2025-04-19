@@ -20,6 +20,7 @@ USpotLightComponent::~USpotLightComponent()
 
 FVector USpotLightComponent::GetDirection()
 {
+    //여기 딱 FORWARD주는지 봐야함
     FRotator rotator = GetWorldRotation();
     FVector WorldForward = rotator.ToQuaternion().RotateVector(GetForwardVector());
     return WorldForward;

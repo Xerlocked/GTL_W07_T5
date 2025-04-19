@@ -36,6 +36,8 @@ void PropertyEditorPanel::Render()
     ImVec2 MinSize(140, 370);
     ImVec2 MaxSize(FLT_MAX, 900);
 
+    FViewportResource* ViewportResource = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetViewportResource();
+
     /* Min, Max Size */
     ImGui::SetNextWindowSizeConstraints(MinSize, MaxSize);
 
@@ -50,8 +52,6 @@ void PropertyEditorPanel::Render()
 
     /* Render Start */
     ImGui::Begin("Detail", nullptr, PanelFlags);
-
-
 
     UEditorEngine* Engine = Cast<UEditorEngine>(GEngine);
     if (!Engine)
@@ -171,8 +171,7 @@ void PropertyEditorPanel::Render()
                 if (ImGui::SliderFloat("Radius", &Radius, 0.01f, 200.f, "%.1f")) {
                     pointlightObj->SetRadius(Radius);
                 }
-
-
+                
                 ImGui::TreePop();
             }
 
@@ -212,6 +211,12 @@ void PropertyEditorPanel::Render()
                     spotlightObj->SetOuterDegree(OuterDegree);
                 }
 
+                ID3D11ShaderResourceView* SpotSRV = ViewportResource->GetSpotShadowMapSRV(); 
+
+                ImTextureID SRVID = reinterpret_cast<ImTextureID>(SpotSRV);
+                
+                ImGui::Image(SRVID, ImVec2(200, 200));
+                
                 ImGui::TreePop();
             }
 
@@ -236,12 +241,9 @@ void PropertyEditorPanel::Render()
                 LightDirection = dirlightObj->GetDirection();
                 FImGuiWidget::DrawVec3Control("Direction", LightDirection, 0, 85);
 
-                //TODO: ViewPort 받아서 거기있는 SRV 띄워야함
-                FViewportResource* ViewportResource = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetViewportResource();
-
                 ID3D11ShaderResourceView* DirectionalSRV = ViewportResource->GetDirectionalShadowMapSRV(); 
 
-                ImTextureID SRVID =  reinterpret_cast<ImTextureID>(DirectionalSRV);
+                ImTextureID SRVID = reinterpret_cast<ImTextureID>(DirectionalSRV);
                 
                 ImGui::Image(SRVID, ImVec2(200, 200));
                 

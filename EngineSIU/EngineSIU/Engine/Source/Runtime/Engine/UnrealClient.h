@@ -75,6 +75,10 @@ public:
     ID3D11DepthStencilView*& GetDirectionalShadowMapDSV() { return DirectionalShadowMapDSV; }
     ID3D11ShaderResourceView*& GetDirectionalShadowMapSRV() { return DirectionalShadowMapSRV; }
 
+    ID3D11Texture2D*& GetSpotShadowMapTexture(){ return SpotShadowMapTexture; }
+    ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
+    ID3D11ShaderResourceView*& GetSpotShadowMapSRV() { return SpotShadowMapSRV; }
+
     ID3D11Texture2D*& GetGizmoDepthStencilTexture() { return GizmoDepthStencilTexture; }
     ID3D11DepthStencilView*& GetGizmoDepthStencilView() { return GizmoDepthStencilView; }
 
@@ -105,11 +109,14 @@ private:
     ID3D11DepthStencilView* DirectionalShadowMapDSV = nullptr;
     ID3D11ShaderResourceView* DirectionalShadowMapSRV = nullptr;
 
+    ID3D11Texture2D* SpotShadowMapTexture = nullptr;
+    ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
+    ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
+    
     // int DirectionalShadowMapWidth = 4096;
     // int DirectionalShadowMapHeight = 4096;
-    int DirectionalShadowMapWidth = 1024;
-    int DirectionalShadowMapHeight = 1024;
-
+    int ShadowMapWidth = 1024;
+    int ShadowMapHeight = 1024;
     
     ID3D11Texture2D* GizmoDepthStencilTexture = nullptr;
     ID3D11DepthStencilView* GizmoDepthStencilView = nullptr;

@@ -410,8 +410,12 @@ void FEditorViewportClient::UpdateViewMatrix()
 {
     if (IsPerspective())
     {
-        View = JungleMath::CreateViewMatrix(PerspectiveCamera.GetLocation(),
-            PerspectiveCamera.GetLocation() + PerspectiveCamera.GetForwardVector(),
+        FVector eye = PerspectiveCamera.GetLocation();
+        FVector forward = PerspectiveCamera.GetForwardVector();
+        FVector target = eye + forward;
+        
+        View = JungleMath::CreateViewMatrix(eye,
+            target,
             FVector{ 0.0f,0.0f, 1.0f }
         );
     }
