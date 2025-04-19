@@ -46,9 +46,11 @@ void FUpdateLightBufferPass::Initialize(FDXDBufferManager* InBufferManager, FGra
 void FUpdateLightBufferPass::PrepareRenderState()
 {
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Graphics->DeviceContext->IASetInputLayout(InputLayout);
     Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapFront);
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(nullptr, nullptr, 0); // 픽셀 쉐이더는 필요없음.
+    Graphics->DeviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     BufferManager->BindConstantBuffer(TEXT("FObjectConstantBuffer"), 0, EShaderStage::Vertex);
     BufferManager->BindConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), 1, EShaderStage::Vertex);
@@ -176,6 +178,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
          if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
          {
              //Light기준 Camera Update
+             // FVector LightDir = Light->GetDirection().GetSafeNormal();
              FVector LightDir = Light->GetDirection().GetSafeNormal();
              FVector LightPos = -LightDir * (Viewport->FarClip/2);
              FVector TargetPos = LightPos + LightDir;
