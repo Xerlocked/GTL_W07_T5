@@ -144,6 +144,24 @@ void FStaticMeshRenderPass::Initialize(FDXDBufferManager* InBufferManager, FGrap
     ShaderManager = InShaderManager;
 
     CreateShader();
+
+    D3D11_SAMPLER_DESC comparisonSamplerDesc;
+    ZeroMemory(&comparisonSamplerDesc, sizeof(D3D11_SAMPLER_DESC));
+    comparisonSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    comparisonSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    comparisonSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    comparisonSamplerDesc.BorderColor[0] = 1.0f;
+    comparisonSamplerDesc.BorderColor[1] = 1.0f;
+    comparisonSamplerDesc.BorderColor[2] = 1.0f;
+    comparisonSamplerDesc.BorderColor[3] = 1.0f;
+    comparisonSamplerDesc.MinLOD = 0.f;
+    comparisonSamplerDesc.MaxLOD = 0.f;
+    comparisonSamplerDesc.MipLODBias = 0.f;
+    comparisonSamplerDesc.MaxAnisotropy = 0;
+    comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+    
+    Graphics->Device->CreateSamplerState(&comparisonSamplerDesc, &ShadowMapSampler);
 }
 
 void FStaticMeshRenderPass::PrepareRender()
@@ -265,6 +283,17 @@ void FStaticMeshRenderPass::RenderPrimitive(OBJ::FStaticMeshRenderData* RenderDa
     }
 }
 
+void FStaticMeshRenderPass::PrepareShadowMap(const std::shared_ptr<FEditorViewportClient>& Viewport)
+{
+    FViewportResource* ViewportResource = Viewport->GetViewportResource();
+
+    ID3D11ShaderResourceView* DirectionalLightShadowMapSRV = ViewportResource->GetDirectionalShadowMapSRV();
+
+    Graphics->DeviceContext->PSSetSamplers(2, 1, &ShadowMapSampler);
+    
+    Graphics->DeviceContext->PSSetShaderResources(2, 1, &DirectionalLightShadowMapSRV);
+}
+
 void FStaticMeshRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
     const EResourceType ResourceType = EResourceType::ERT_Scene;
@@ -276,6 +305,8 @@ void FStaticMeshRenderPass::Render(const std::shared_ptr<FEditorViewportClient>&
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     
     PrepareRenderState(Viewport);
+
+    PrepareShadowMap(Viewport);
 
     for (UStaticMeshComponent* Comp : StaticMeshComponents)
     {

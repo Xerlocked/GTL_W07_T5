@@ -11,6 +11,9 @@
 #define DIRECTIONAL_LIGHT   3
 #define AMBIENT_LIGHT       4
 
+Texture2D DirectionalShadowMap : register(t2);
+SamplerState ShadowMapSampler : register(s2);
+
 struct FAmbientLightInfo
 {
     float4 AmbientColor;
@@ -23,8 +26,8 @@ struct FDirectionalLightInfo
     float3 Direction;
     float Intensity;
 
-    matrix LightViewMatrix;
-    matrix LightProjectionMatrix;
+    row_major matrix LightViewMatrix;
+    row_major matrix LightProjectionMatrix;
 };
 
 struct FPointLightInfo
@@ -39,8 +42,8 @@ struct FPointLightInfo
     float Attenuation;
     float Padding;
     
-    matrix LightViewMatrix;
-    matrix LightProjectionMatrix;
+    row_major matrix LightViewMatrix;
+    row_major matrix LightProjectionMatrix;
 };
 
 struct FSpotLightInfo
@@ -58,8 +61,8 @@ struct FSpotLightInfo
     float OuterRad;
     float Attenuation;
 
-    matrix LightViewMatrix;
-    matrix LightProjectionMatrix;
+    row_major matrix LightViewMatrix;
+    row_major matrix LightProjectionMatrix;
 };
 
 cbuffer Lighting : register(b0)
@@ -176,6 +179,10 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
 float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
 {
     FDirectionalLightInfo LightInfo = Directional[nIndex];
+
+    // float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, UV).rgb;
+    Texture2D a = DirectionalShadowMap;
+    SamplerState b = ShadowMapSampler;
     
     float3 LightDir = normalize(-LightInfo.Direction);
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
