@@ -208,7 +208,7 @@ float4 Lighting(float3 WorldPosition, float3 WorldNormal, float3 WorldViewPositi
     [unroll(MAX_AMBIENT_LIGHT)]
     for (int l = 0; l < AmbientLightsCount; l++)
     {
-        FinalColor += float4(Ambient[l].AmbientColor.rgb*DiffuseColor, 0.0);
+        FinalColor += float4(Ambient[l].AmbientColor.rgb*DiffuseColor.rgb, 0.0);
         FinalColor.a = 1.0;
     }
     

@@ -1,4 +1,5 @@
 #include "PointLightComponent.h"
+#include "UObject/Casts.h"
 
 UPointLightComponent::UPointLightComponent()
 {
@@ -15,6 +16,66 @@ UPointLightComponent::UPointLightComponent()
 UPointLightComponent::~UPointLightComponent()
 {
 }
+
+UObject* UPointLightComponent::Duplicate(UObject* InOuter)
+{
+
+    ThisClass* NewComponent = Cast<ThisClass>(Super::Duplicate(InOuter));
+    if (NewComponent)
+    {
+        NewComponent->PointLightInfo = PointLightInfo;
+    }
+    return NewComponent;
+}
+
+void UPointLightComponent::GetProperties(TMap<FString, FString>& OutProperties) const
+{
+    Super::GetProperties(OutProperties);
+    OutProperties.Add(TEXT("Radius"), FString::Printf(TEXT("%f"), PointLightInfo.Radius));
+    OutProperties.Add(TEXT("LightColor"), FString::Printf(TEXT("%s"), *PointLightInfo.LightColor.ToString()));
+    OutProperties.Add(TEXT("Intensity"), FString::Printf(TEXT("%f"), PointLightInfo.Intensity));
+    OutProperties.Add(TEXT("Type"), FString::Printf(TEXT("%d"), PointLightInfo.Type));
+    OutProperties.Add(TEXT("Attenuation"), FString::Printf(TEXT("%f"), PointLightInfo.Attenuation));
+    OutProperties.Add(TEXT("Position"), FString::Printf(TEXT("%s"), *PointLightInfo.Position.ToString()));
+}
+
+void UPointLightComponent::SetProperties(const TMap<FString, FString>& InProperties)
+{
+    Super::SetProperties(InProperties);
+    const FString* TempStr = nullptr;
+    TempStr = InProperties.Find(TEXT("Radius"));
+    if (TempStr)
+    {
+        PointLightInfo.Radius = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("LightColor"));
+    if (TempStr)
+    {
+        PointLightInfo.LightColor.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Intensity"));
+    if (TempStr)
+    {
+        PointLightInfo.Intensity = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Type"));
+    if (TempStr)
+    {
+        PointLightInfo.Type = FString::ToInt(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Attenuation"));
+    if (TempStr)
+    {
+        PointLightInfo.Attenuation = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Position"));
+    if (TempStr)
+    {
+        PointLightInfo.Position.InitFromString(*TempStr);
+    }
+
+}
+
 
 const FPointLightInfo& UPointLightComponent::GetPointLightInfo() const
 {

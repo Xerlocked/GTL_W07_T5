@@ -11,6 +11,11 @@ public:
     virtual ~UDirectionalLightComponent() override;
     FVector GetDirection();
 
+    virtual UObject* Duplicate(UObject* InOuter) override;
+
+    virtual void GetProperties(TMap<FString, FString>& OutProperties) const override;
+    virtual void SetProperties(const TMap<FString, FString>& InProperties) override;
+
     const FDirectionalLightInfo& GetDirectionalLightInfo() const;
     void SetDirectionalLightInfo(const FDirectionalLightInfo& InDirectionalLightInfo);
 

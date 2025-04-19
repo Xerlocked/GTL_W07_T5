@@ -3,8 +3,8 @@
 #include "Components/BillboardComponent.h"
 ASpotLight::ASpotLight()
 {
-    SpotLightComponent = AddComponent<USpotLightComponent>();
-    BillboardComponent = AddComponent<UBillboardComponent>();
+    SpotLightComponent = AddComponent<USpotLightComponent>("USpotLightComponent_0");
+    BillboardComponent = AddComponent<UBillboardComponent>("UBillboardComponent_0");
 
     RootComponent = BillboardComponent;
 

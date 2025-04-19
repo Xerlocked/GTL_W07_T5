@@ -20,6 +20,7 @@ public:
 
     virtual void Init() override;
     virtual void Tick(float DeltaTime) override;
+    void Release() override;
 
     UWorld* PIEWorld = nullptr;
     UWorld* EditorWorld = nullptr;
