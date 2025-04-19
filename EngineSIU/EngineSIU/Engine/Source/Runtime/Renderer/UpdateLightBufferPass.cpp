@@ -186,6 +186,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
              
              FCameraConstantBuffer LightViewCameraConstant;
              LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
+
+             Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
              
              // 오쏘그래픽 너비는 줌 값과 가로세로 비율에 따라 결정됩니다.
              float OrthoWidth = Viewport->OrthoSize * Viewport->AspectRatio;
@@ -196,6 +198,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
                  Viewport->NearClip,
                  Viewport->FarClip
              );
+
+             Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
              
              BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
     
@@ -240,6 +244,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount] = Light->GetSpotLightInfo();
             LightBufferData.SpotLights[SpotLightsCount].Position = Light->GetWorldLocation();
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
+            LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             SpotLightsCount++;
         }
     }
@@ -250,6 +256,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
         {
             LightBufferData.PointLights[PointLightsCount] = Light->GetPointLightInfo();
             LightBufferData.PointLights[PointLightsCount].Position = Light->GetWorldLocation();
+            LightBufferData.PointLights[PointLightsCount].LightViewMatrix = Light->ViewMatrix;
+            LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             PointLightsCount++;
         }
     }
@@ -260,6 +268,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
         {
             LightBufferData.Directional[DirectionalLightsCount] = Light->GetDirectionalLightInfo();
             LightBufferData.Directional[DirectionalLightsCount].Direction = Light->GetDirection();
+            LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix;
+            LightBufferData.Directional[DirectionalLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             DirectionalLightsCount++;
         }
     }

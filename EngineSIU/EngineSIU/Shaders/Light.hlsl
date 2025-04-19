@@ -22,6 +22,9 @@ struct FDirectionalLightInfo
 
     float3 Direction;
     float Intensity;
+
+    matrix LightViewMatrix;
+    matrix LightProjectionMatrix;
 };
 
 struct FPointLightInfo
@@ -35,6 +38,9 @@ struct FPointLightInfo
     float Intensity;
     float Attenuation;
     float Padding;
+    
+    matrix LightViewMatrix;
+    matrix LightProjectionMatrix;
 };
 
 struct FSpotLightInfo
@@ -51,6 +57,9 @@ struct FSpotLightInfo
     float InnerRad;
     float OuterRad;
     float Attenuation;
+
+    matrix LightViewMatrix;
+    matrix LightProjectionMatrix;
 };
 
 cbuffer Lighting : register(b0)

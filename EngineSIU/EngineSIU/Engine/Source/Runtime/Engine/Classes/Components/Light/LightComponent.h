@@ -13,6 +13,10 @@ public:
 
     virtual void TickComponent(float DeltaTime) override;
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
+    
+    FMatrix ViewMatrix;
+    FMatrix ProjectionMatrix;
+
 protected:
 
     FBoundingBox AABB;
