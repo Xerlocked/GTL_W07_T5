@@ -164,14 +164,20 @@ void PropertyEditorPanel::Render()
                     [&](FLinearColor c) { pointlightObj->SetLightColor(c); });
 
                 float Intensity = pointlightObj->GetIntensity();
-                if (ImGui::SliderFloat("Intensity", &Intensity, 0.0f, 160.0f, "%.1f"))
+                if (ImGui::DragFloat("Intensity", &Intensity, 0.01f, 0.0f, 10000.0f, "%.3f"))
                     pointlightObj->SetIntensity(Intensity);
 
-                float Radius = pointlightObj->GetRadius();
-                if (ImGui::SliderFloat("Radius", &Radius, 0.01f, 200.f, "%.1f")) {
-                    pointlightObj->SetRadius(Radius);
+                float Radius = pointlightObj->GetAttenuationRadius();
+                if (ImGui::DragFloat("Radius", &Radius, 0.01f, 0.01f, 2000.f, "%.3f")) {
+                    pointlightObj->SetAttenuationRadius(Radius);
                 }
-                
+
+                float Falloff = pointlightObj->GetFalloff();
+                if (ImGui::DragFloat("Falloff", &Falloff, 0.01f, 0.01f, 10.f, "%.3f")) {
+                    pointlightObj->SetFalloff(Falloff);
+                }
+
+
                 ImGui::TreePop();
             }
 
@@ -190,25 +196,30 @@ void PropertyEditorPanel::Render()
                     [&](FLinearColor c) { spotlightObj->SetLightColor(c); });
 
                 float Intensity = spotlightObj->GetIntensity();
-                if (ImGui::SliderFloat("Intensity", &Intensity, 0.0f, 160.0f, "%.1f"))
+                if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, 10000.0f, "%.3f"))
                     spotlightObj->SetIntensity(Intensity);
 
-                float Radius = spotlightObj->GetRadius();
-                if (ImGui::SliderFloat("Radius", &Radius, 0.01f, 200.f, "%.1f")) {
-                    spotlightObj->SetRadius(Radius);
+                float Radius = spotlightObj->GetAttenuationRadius();
+                if (ImGui::DragFloat("Radius", &Radius, 0.1f, 0.01f, 2000.f, "%.3f")) {
+                    spotlightObj->SetAttenuationRadius(Radius);
                 }
 
                 LightDirection = spotlightObj->GetDirection();
                 FImGuiWidget::DrawVec3Control("Direction", LightDirection, 0, 85);
                 
                 float InnerDegree = spotlightObj->GetInnerDegree();
-                if (ImGui::SliderFloat("InnerDegree", &InnerDegree, 0.01f, 180.f, "%.1f")) {
+                if (ImGui::DragFloat("InnerDegree", &InnerDegree, 0.1f, 0.0f, 80.f, "%.3f")) {
                     spotlightObj->SetInnerDegree(InnerDegree);
                 }
 
                 float OuterDegree = spotlightObj->GetOuterDegree();
-                if (ImGui::SliderFloat("OuterDegree", &OuterDegree, 0.01f, 180.f, "%.1f")) {
+                if (ImGui::DragFloat("OuterDegree", &OuterDegree, 0.1f, 0.0f, 80.f, "%.3f")) {
                     spotlightObj->SetOuterDegree(OuterDegree);
+                }
+
+                float Falloff = spotlightObj->GetFalloff();
+                if (ImGui::DragFloat("Falloff", &Falloff, 0.01f, 0.01f, 10.f, "%.2f")) {
+                    spotlightObj->SetFalloff(Falloff);
                 }
 
                 ID3D11ShaderResourceView* SpotSRV = ViewportResource->GetSpotShadowMapSRV(); 
@@ -235,7 +246,7 @@ void PropertyEditorPanel::Render()
                     [&](FLinearColor c) { dirlightObj->SetLightColor(c); });
 
                 float Intensity = dirlightObj->GetIntensity();
-                if (ImGui::SliderFloat("Intensity", &Intensity, 0.0f, 150.0f, "%.1f"))
+                if (ImGui::SliderFloat("Intensity", &Intensity, 0.0f, 150.0f, "%.3f"))
                     dirlightObj->SetIntensity(Intensity);
 
                 LightDirection = dirlightObj->GetDirection();

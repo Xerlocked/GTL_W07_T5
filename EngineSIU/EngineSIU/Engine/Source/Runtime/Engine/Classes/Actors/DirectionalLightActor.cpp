@@ -3,8 +3,8 @@
 #include "Components/BillboardComponent.h"
 ADirectionalLight::ADirectionalLight()
 {
-    DirectionalLightComponent = AddComponent<UDirectionalLightComponent>();
-    BillboardComponent = AddComponent<UBillboardComponent>();
+    DirectionalLightComponent = AddComponent<UDirectionalLightComponent>("UDirectionalLightComponent_0");
+    BillboardComponent = AddComponent<UBillboardComponent>("UBillboardComponent_0");
 
     RootComponent = BillboardComponent;
 

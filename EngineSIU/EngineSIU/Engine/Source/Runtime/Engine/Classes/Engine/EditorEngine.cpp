@@ -50,6 +50,11 @@ void UEditorEngine::Init()
 #endif
 }
 
+void UEditorEngine::Release()
+{
+}
+
+
 void UEditorEngine::Tick(float DeltaTime)
 {
     for (FWorldContext* WorldContext : WorldList)
@@ -196,8 +201,8 @@ void UEditorEngine::HoverActor(AActor* InActor)
 
 void UEditorEngine::NewWorld()
 {
-    SelectActor(nullptr);
-    SelectComponent(nullptr);
+    DeselectActor(GetSelectedActor());
+    DeselectComponent(GetSelectedComponent());
 
     if (ActiveWorld->GetActiveLevel())
     {
@@ -215,7 +220,7 @@ void UEditorEngine::SelectComponent(USceneComponent* InComponent) const
 
 void UEditorEngine::DeselectComponent(USceneComponent* InComponent)
 {
-    if (InComponent == nullptr)
+    if (InComponent)
     {
         PrivateEditorSelection::GComponentSelected = nullptr;
     }

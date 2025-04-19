@@ -1,0 +1,408 @@
+# Blender 4.3.2 MTL File: 'Street.blend'
+# www.blender.org
+
+newmtl BG
+Ns 68.052933
+Ka 1.000000 1.000000 1.000000
+Kd 0.063720 0.063720 0.063720
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Build_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_1_BaseColor.png
+map_Ns Street_Build_1_Roughness.png
+map_refl Street_Build_1_Metallic.png
+map_Ke Street_Build_1_Emissive.png
+map_Bump -bm 1.000000 Street_Build_1_NormalOpemGL.png
+
+newmtl Build_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_2_BaseColor.png
+map_Ns Street_Build_2_Roughness.png
+map_refl Street_Build_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_2_NormalOpemGL.png
+
+newmtl Build_3
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_3_BaseColor.png
+map_Ns Street_Build_3_Roughness.png
+map_refl Street_Build_3_Metallic.png
+map_Bump -bm 1.000000 Street_Build_3_NormalOpemGL.png
+
+newmtl Build_4
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_4_BaseColor.png
+map_Ns Street_Build_4_Roughness.png
+map_refl Street_Build_4_Metallic.png
+map_Bump -bm 1.000000 Street_Build_4_NormalOpemGL.png
+
+newmtl Build_A_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_A_1_BaseColor.png
+map_Ns Street_Build_A_1_Roughness.png
+map_refl Street_Build_A_1_Metallic.png
+map_Bump -bm 1.000000 Street_Build_A_1_NormalOpemGL.png
+
+newmtl Build_A_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_A_2_BaseColor.png
+map_Ns Street_Build_A_2_Roughness.png
+map_refl Street_Build_A_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_A_2_NormalOpemGL.png
+
+newmtl Build_B_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_B_1_BaseColor.png
+map_Ns Street_Build_B_1_Roughness.png
+map_refl Street_Build_B_1_Metallic.png
+map_Ke Street_Build_B_1_Emissive.png
+map_Bump -bm 1.000000 Street_Build_B_1_NormalOpemGL.png
+
+newmtl Build_B_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_B_2_BaseColor.png
+map_Ns Street_Build_B_2_Roughness.png
+map_refl Street_Build_B_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_B_2_NormalOpemGL.png
+
+newmtl Build_C_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_C_1_BaseColor.png
+map_Ns Street_Build_C_1_Roughness.png
+map_refl Street_Build_C_1_Metallic.png
+map_Bump -bm 1.000000 Street_Build_C_1_NormalOpemGL.png
+
+newmtl Build_C_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_C_2_BaseColor.png
+map_Ns Street_Build_C_2_Roughness.png
+map_refl Street_Build_C_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_C_2_NormalOpemGL.png
+
+newmtl Build_D_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_D_1_BaseColor.png
+map_Ns Street_Build_D_1_Roughness.png
+map_refl Street_Build_D_1_Metallic.png
+map_Bump -bm 1.000000 Street_Build_D_1_NormalOpemGL.png
+
+newmtl Build_D_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_D_2_BaseColor.png
+map_Ns Street_Build_D_2_Roughness.png
+map_refl Street_Build_D_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_D_2_NormalOpemGL.png
+
+newmtl Build_E
+Ka 1.000000 1.000000 1.000000
+Ks 0.610000 0.610000 0.610000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_E_BaseColor.png
+map_Ns Street_Build_E_Roughness.png
+map_refl Street_Build_E_Metallic.png
+map_Bump -bm 1.000000 Street_Build_E_NormalOpemGL.png
+
+newmtl Build_F_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_F_1_BaseColor.png
+map_Ns Street_Build_F_1_Roughness.png
+map_refl Street_Build_F_1_Metallic.png
+map_Bump -bm 1.000000 Street_Build_F_1_NormalOpemGL.png
+
+newmtl Build_F_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_F_2_BaseColor.png
+map_Ns Street_Build_F_2_Roughness.png
+map_refl Street_Build_F_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_F_2_NormalOpemGL.png
+
+newmtl Build_G_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_G_1_BaseColor.png
+map_Ns Street_Build_G_1_Roughness.png
+map_refl Street_Build_G_1_Metallic.png
+map_Bump -bm 1.000000 Street_Build_G_1_NormalOpemGL.png
+
+newmtl Build_G_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_G_2_BaseColor.png
+map_Ns Street_Build_G_2_Roughness.png
+map_refl Street_Build_G_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_G_2_NormalOpemGL.png
+
+newmtl Build_H_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_H_1_BaseColor.png
+map_Ns Street_Build_H_1_Roughness.png
+map_refl Street_Build_H_1_Metallic.png
+map_Bump -bm 1.000000 Street_Build_H_1_NormalOpemGL.png
+
+newmtl Build_H_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_H_2_BaseColor.png
+map_Ns Street_Build_H_2_Roughness.png
+map_refl Street_Build_H_2_Metallic.png
+map_Bump -bm 1.000000 Street_Build_H_2_NormalOpemGL.png
+
+newmtl Build_I
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_I_BaseColor.png
+map_Ns Street_Build_I_Roughness.png
+map_refl Street_Build_I_Metallic.png
+map_Bump -bm 1.000000 Street_Build_I_NormalOpemGL.png
+
+newmtl Build_J
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Build_J_BaseColor.png
+map_Ns Street_Build_J_Roughness.png
+map_refl Street_Build_J_Metallic.png
+map_Bump -bm 1.000000 Street_Build_J_NormalOpemGL.png
+
+newmtl Props_01
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_01_BaseColor.png
+map_Ns Street_Props_01_Roughness.png
+map_refl Street_Props_01_Metallic.png
+map_Bump -bm 1.000000 Street_Props_01_NormalOpemGL.png
+
+newmtl Props_02
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_02_BaseColor.png
+map_Ns Street_Props_02_Roughness.png
+map_refl Street_Props_02_Metallic.png
+map_Bump -bm 1.000000 Street_Props_02_NormalOpemGL.png
+
+newmtl Props_03
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_03_BaseColor.png
+map_Ns Street_Props_03_Roughness.png
+map_refl Street_Props_03_Metallic.png
+map_Ke Street_Props_03_Emissive.png
+map_Bump -bm 1.000000 Street_Props_03_NormalOpemGL.png
+
+newmtl Props_04
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_04_BaseColor.png
+map_Ns Street_Props_04_Roughness.png
+map_refl Street_Props_04_Metallic.png
+map_Ke Street_Props_04_Emissive.png
+map_Bump -bm 1.000000 Street_Props_04_NormalOpemGL.png
+
+newmtl Props_05
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_05_BaseColor.png
+map_Ns Street_Props_05_Roughness.png
+map_refl Street_Props_05_Metallic.png
+map_Ke Street_Props_05_Emissive.png
+map_Bump -bm 1.000000 Street_Props_05_NormalOpemGL.png
+
+newmtl Props_06
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_06_BaseColor.png
+map_Ns Street_Props_06_Roughness.png
+map_refl Street_Props_06_Metallic.png
+map_Bump -bm 1.000000 Street_Props_06_NormalOpemGL.png
+
+newmtl Props_07
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_07_BaseColor.png
+map_Ns Street_Props_07_Roughness.png
+map_refl Street_Props_07_Metallic.png
+map_Bump -bm 1.000000 Street_Props_07_NormalOpemGL.png
+
+newmtl Props_08
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_08_BaseColor.png
+map_Ns Street_Props_08_Roughness.png
+map_refl Street_Props_08_Metallic.png
+map_Ke Street_Props_08_Emissive.png
+map_Bump -bm 1.000000 Street_Props_08_NormalOpemGL.png
+
+newmtl Props_09
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_09_BaseColor.png
+map_Ns Street_Props_09_Roughness.png
+map_refl Street_Props_09_Metallic.png
+map_Bump -bm 1.000000 Street_Props_09_NormalOpemGL.png
+
+newmtl Props_10
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_Props_10_BaseColor.png
+map_Ns Street_Props_10_Roughness.png
+map_refl Street_Props_10_Metallic.png
+map_Ke Street_Props_10_Emissive.png
+map_Bump -bm 1.000000 Street_Props_10_NormalOpemGL.png
+
+newmtl ground
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_ground_BaseColor.png
+map_Ns Street_ground_Roughness.png
+map_refl Street_ground_Metallic.png
+map_Bump -bm 1.000000 Street_ground_NormalOpemGL.png
+
+newmtl pole
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Street_pole_BaseColor.png
+map_Ns Street_pole_Roughness.png
+map_refl Street_pole_Metallic.png
+map_Ke Street_pole_Emissive.png
+map_Bump -bm 1.000000 Street_pole_NormalOpemGL.png

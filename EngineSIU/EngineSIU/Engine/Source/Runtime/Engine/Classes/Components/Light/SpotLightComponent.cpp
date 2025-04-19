@@ -1,29 +1,104 @@
 #include "SpotLightComponent.h"
 #include "Math/Rotator.h"
 #include "Math/Quat.h"
+#include "UObject/Casts.h"
+
 USpotLightComponent::USpotLightComponent()
 {
     SpotLightInfo.Position = GetWorldLocation();
-    SpotLightInfo.Radius = 30.0f;
-    SpotLightInfo.Direction = GetForwardVector();
+    SpotLightInfo.AttenuationRadius = 0.0f;
+    SpotLightInfo.Direction = USceneComponent::GetForwardVector();
     SpotLightInfo.LightColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
     SpotLightInfo.Intensity = 1000.0f;
     SpotLightInfo.Type = ELightType::SPOT_LIGHT;
-    SpotLightInfo.InnerRad = 0.2618;
-    SpotLightInfo.OuterRad = 0.5236;
-    SpotLightInfo.Attenuation = 20.0f;
+    SpotLightInfo.InnerRad = 0;
+    SpotLightInfo.OuterRad = 0;
+    SpotLightInfo.Falloff = 0.01f;
 }
 
 USpotLightComponent::~USpotLightComponent()
 {
 }
+UObject* USpotLightComponent::Duplicate(UObject* InOuter)
+{
+    ThisClass* NewComponent = Cast<ThisClass>(Super::Duplicate(InOuter));
+    if (NewComponent)
+    {
+        NewComponent->SpotLightInfo = SpotLightInfo;
+    }
+
+    return NewComponent;
+}
+
+void USpotLightComponent::GetProperties(TMap<FString, FString>& OutProperties) const
+{
+    Super::GetProperties(OutProperties);
+    OutProperties.Add(TEXT("Position"), FString::Printf(TEXT("%s"), *SpotLightInfo.Position.ToString()));
+    OutProperties.Add(TEXT("AttenuationRadius"), FString::Printf(TEXT("%f"), SpotLightInfo.AttenuationRadius));
+    OutProperties.Add(TEXT("Direction"), FString::Printf(TEXT("%s"), *SpotLightInfo.Direction.ToString()));
+    OutProperties.Add(TEXT("LightColor"), FString::Printf(TEXT("%s"), *SpotLightInfo.LightColor.ToString()));
+    OutProperties.Add(TEXT("Intensity"), FString::Printf(TEXT("%f"), SpotLightInfo.Intensity));
+    OutProperties.Add(TEXT("Type"), FString::Printf(TEXT("%d"), SpotLightInfo.Type));
+    OutProperties.Add(TEXT("InnerRad"), FString::Printf(TEXT("%f"), SpotLightInfo.InnerRad));
+    OutProperties.Add(TEXT("OuterRad"), FString::Printf(TEXT("%f"), SpotLightInfo.OuterRad));
+    OutProperties.Add(TEXT("Falloff"), FString::Printf(TEXT("%f"), SpotLightInfo.Falloff));
+
+}
+
+void USpotLightComponent::SetProperties(const TMap<FString, FString>& InProperties)
+{
+    Super::SetProperties(InProperties);
+    const FString* TempStr = nullptr;
+    TempStr = InProperties.Find(TEXT("Position"));
+    if (TempStr)
+    {
+        SpotLightInfo.Position.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("AttenuationRadius"));
+    if (TempStr)
+    {
+        SpotLightInfo.AttenuationRadius = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Direction"));
+    if (TempStr)
+    {
+        SpotLightInfo.Direction.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("LightColor"));
+    if (TempStr)
+    {
+        SpotLightInfo.LightColor.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Intensity"));
+    if (TempStr)
+    {
+        SpotLightInfo.Intensity = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Type"));
+    if (TempStr)
+    {
+        SpotLightInfo.Type = FString::ToInt(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("InnerRad"));
+    if (TempStr)
+    {
+        SpotLightInfo.InnerRad = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("OuterRad"));
+    if (TempStr)
+    {
+        SpotLightInfo.OuterRad = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Falloff"));
+    if (TempStr)
+    {
+        SpotLightInfo.Falloff = FString::ToFloat(*TempStr);
+    }
+}
 
 FVector USpotLightComponent::GetDirection()
 {
-    //여기 딱 FORWARD주는지 봐야함
-    FRotator rotator = GetWorldRotation();
-    FVector WorldForward = rotator.ToQuaternion().RotateVector(GetForwardVector());
-    return WorldForward;
+    return GetWorldMatrix().GetAxis(0).GetSafeNormal();
 }
 
 const FSpotLightInfo& USpotLightComponent::GetSpotLightInfo() const
@@ -36,14 +111,14 @@ void USpotLightComponent::SetSpotLightInfo(const FSpotLightInfo& InSpotLightInfo
     SpotLightInfo = InSpotLightInfo;
 }
 
-float USpotLightComponent::GetRadius() const
+float USpotLightComponent::GetAttenuationRadius() const
 {
-    return SpotLightInfo.Radius;
+    return SpotLightInfo.AttenuationRadius;
 }
 
-void USpotLightComponent::SetRadius(float InRadius)
+void USpotLightComponent::SetAttenuationRadius(float InRadius)
 {
-    SpotLightInfo.Radius = InRadius;
+    SpotLightInfo.AttenuationRadius = InRadius;
 }
 
 FLinearColor USpotLightComponent::GetLightColor() const
@@ -55,8 +130,6 @@ void USpotLightComponent::SetLightColor(const FLinearColor& InColor)
 {
     SpotLightInfo.LightColor = InColor;
 }
-
-
 
 float USpotLightComponent::GetIntensity() const
 {
@@ -100,20 +173,38 @@ void USpotLightComponent::SetOuterRad(float InOuterCos)
 
 float USpotLightComponent::GetInnerDegree() const
 {
-    return SpotLightInfo.InnerRad * (180.0f / PI);
+    return SpotLightInfo.InnerRad;
 }
 
 void USpotLightComponent::SetInnerDegree(float InInnerDegree)
 {
-    SpotLightInfo.InnerRad = InInnerDegree * (PI / 180.0f);
+    if (InInnerDegree > GetOuterDegree())
+    {
+        SetOuterDegree(InInnerDegree);
+    }
+    SpotLightInfo.InnerRad = InInnerDegree;
 }
 
 float USpotLightComponent::GetOuterDegree() const
 {
-    return SpotLightInfo.OuterRad * (180 / PI);
+    return SpotLightInfo.OuterRad;
 }
 
 void USpotLightComponent::SetOuterDegree(float InOuterDegree)
 {
-    SpotLightInfo.OuterRad = InOuterDegree * (PI / 180.0f);
+    if (InOuterDegree < GetInnerDegree())
+    {
+        SetInnerDegree(InOuterDegree);
+    }
+    SpotLightInfo.OuterRad = InOuterDegree;
+}
+
+float USpotLightComponent::GetFalloff() const
+{
+    return SpotLightInfo.Falloff;
+}
+
+void USpotLightComponent::SetFalloff(float InFalloff)
+{
+    SpotLightInfo.Falloff = InFalloff;
 }
