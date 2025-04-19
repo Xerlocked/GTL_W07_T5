@@ -27,6 +27,7 @@ protected:
 public:
     virtual void Init();
     virtual void Tick(float DeltaTime) = 0;
+    virtual void Release() = 0;
 
     // TODO: UObject->GetWorld() 구현 이후 추가.
     UWorld* GetWorldFromContextObject(const UObject* Object) const;

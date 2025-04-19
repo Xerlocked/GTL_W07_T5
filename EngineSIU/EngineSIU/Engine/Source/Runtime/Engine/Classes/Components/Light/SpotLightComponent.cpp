@@ -1,6 +1,8 @@
 #include "SpotLightComponent.h"
 #include "Math/Rotator.h"
 #include "Math/Quat.h"
+#include "UObject/Casts.h"
+
 USpotLightComponent::USpotLightComponent()
 {
     SpotLightInfo.Position = GetWorldLocation();
@@ -16,6 +18,82 @@ USpotLightComponent::USpotLightComponent()
 
 USpotLightComponent::~USpotLightComponent()
 {
+}
+UObject* USpotLightComponent::Duplicate(UObject* InOuter)
+{
+    ThisClass* NewComponent = Cast<ThisClass>(Super::Duplicate(InOuter));
+    if (NewComponent)
+    {
+        NewComponent->SpotLightInfo = SpotLightInfo;
+    }
+
+    return NewComponent;
+}
+
+void USpotLightComponent::GetProperties(TMap<FString, FString>& OutProperties) const
+{
+    Super::GetProperties(OutProperties);
+    OutProperties.Add(TEXT("Position"), FString::Printf(TEXT("%s"), *SpotLightInfo.Position.ToString()));
+    OutProperties.Add(TEXT("Radius"), FString::Printf(TEXT("%f"), SpotLightInfo.Radius));
+    OutProperties.Add(TEXT("Direction"), FString::Printf(TEXT("%s"), *SpotLightInfo.Direction.ToString()));
+    OutProperties.Add(TEXT("LightColor"), FString::Printf(TEXT("%s"), *SpotLightInfo.LightColor.ToString()));
+    OutProperties.Add(TEXT("Intensity"), FString::Printf(TEXT("%f"), SpotLightInfo.Intensity));
+    OutProperties.Add(TEXT("Type"), FString::Printf(TEXT("%d"), SpotLightInfo.Type));
+    OutProperties.Add(TEXT("InnerRad"), FString::Printf(TEXT("%f"), SpotLightInfo.InnerRad));
+    OutProperties.Add(TEXT("OuterRad"), FString::Printf(TEXT("%f"), SpotLightInfo.OuterRad));
+    OutProperties.Add(TEXT("Attenuation"), FString::Printf(TEXT("%f"), SpotLightInfo.Attenuation));
+
+}
+
+void USpotLightComponent::SetProperties(const TMap<FString, FString>& InProperties)
+{
+    Super::SetProperties(InProperties);
+    const FString* TempStr = nullptr;
+    TempStr = InProperties.Find(TEXT("Position"));
+    if (TempStr)
+    {
+        SpotLightInfo.Position.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Radius"));
+    if (TempStr)
+    {
+        SpotLightInfo.Radius = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Direction"));
+    if (TempStr)
+    {
+        SpotLightInfo.Direction.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("LightColor"));
+    if (TempStr)
+    {
+        SpotLightInfo.LightColor.InitFromString(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Intensity"));
+    if (TempStr)
+    {
+        SpotLightInfo.Intensity = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Type"));
+    if (TempStr)
+    {
+        SpotLightInfo.Type = FString::ToInt(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("InnerRad"));
+    if (TempStr)
+    {
+        SpotLightInfo.InnerRad = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("OuterRad"));
+    if (TempStr)
+    {
+        SpotLightInfo.OuterRad = FString::ToFloat(*TempStr);
+    }
+    TempStr = InProperties.Find(TEXT("Attenuation"));
+    if (TempStr)
+    {
+        SpotLightInfo.Attenuation = FString::ToFloat(*TempStr);
+    }
 }
 
 FVector USpotLightComponent::GetDirection()

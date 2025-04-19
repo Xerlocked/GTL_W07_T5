@@ -50,6 +50,11 @@ void UEditorEngine::Init()
 #endif
 }
 
+void UEditorEngine::Release()
+{
+}
+
+
 void UEditorEngine::Tick(float DeltaTime)
 {
     for (FWorldContext* WorldContext : WorldList)
