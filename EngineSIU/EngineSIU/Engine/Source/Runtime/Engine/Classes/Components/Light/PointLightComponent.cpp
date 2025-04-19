@@ -31,11 +31,11 @@ UObject* UPointLightComponent::Duplicate(UObject* InOuter)
 void UPointLightComponent::GetProperties(TMap<FString, FString>& OutProperties) const
 {
     Super::GetProperties(OutProperties);
-    OutProperties.Add(TEXT("Radius"), FString::Printf(TEXT("%f"), PointLightInfo.Radius));
+    OutProperties.Add(TEXT("AttenuationRadius"), FString::Printf(TEXT("%f"), PointLightInfo.AttenuationRadius));
     OutProperties.Add(TEXT("LightColor"), FString::Printf(TEXT("%s"), *PointLightInfo.LightColor.ToString()));
     OutProperties.Add(TEXT("Intensity"), FString::Printf(TEXT("%f"), PointLightInfo.Intensity));
     OutProperties.Add(TEXT("Type"), FString::Printf(TEXT("%d"), PointLightInfo.Type));
-    OutProperties.Add(TEXT("Attenuation"), FString::Printf(TEXT("%f"), PointLightInfo.Attenuation));
+    OutProperties.Add(TEXT("Falloff"), FString::Printf(TEXT("%f"), PointLightInfo.Falloff));
     OutProperties.Add(TEXT("Position"), FString::Printf(TEXT("%s"), *PointLightInfo.Position.ToString()));
 }
 
@@ -43,10 +43,10 @@ void UPointLightComponent::SetProperties(const TMap<FString, FString>& InPropert
 {
     Super::SetProperties(InProperties);
     const FString* TempStr = nullptr;
-    TempStr = InProperties.Find(TEXT("Radius"));
+    TempStr = InProperties.Find(TEXT("AttenuationRadius"));
     if (TempStr)
     {
-        PointLightInfo.Radius = FString::ToFloat(*TempStr);
+        PointLightInfo.AttenuationRadius = FString::ToFloat(*TempStr);
     }
     TempStr = InProperties.Find(TEXT("LightColor"));
     if (TempStr)
@@ -63,10 +63,10 @@ void UPointLightComponent::SetProperties(const TMap<FString, FString>& InPropert
     {
         PointLightInfo.Type = FString::ToInt(*TempStr);
     }
-    TempStr = InProperties.Find(TEXT("Attenuation"));
+    TempStr = InProperties.Find(TEXT("Falloff"));
     if (TempStr)
     {
-        PointLightInfo.Attenuation = FString::ToFloat(*TempStr);
+        PointLightInfo.Falloff = FString::ToInt(*TempStr);
     }
     TempStr = InProperties.Find(TEXT("Position"));
     if (TempStr)

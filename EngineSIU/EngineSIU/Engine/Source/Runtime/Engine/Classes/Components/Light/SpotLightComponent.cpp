@@ -34,14 +34,14 @@ void USpotLightComponent::GetProperties(TMap<FString, FString>& OutProperties) c
 {
     Super::GetProperties(OutProperties);
     OutProperties.Add(TEXT("Position"), FString::Printf(TEXT("%s"), *SpotLightInfo.Position.ToString()));
-    OutProperties.Add(TEXT("Radius"), FString::Printf(TEXT("%f"), SpotLightInfo.Radius));
+    OutProperties.Add(TEXT("AttenuationRadius"), FString::Printf(TEXT("%f"), SpotLightInfo.AttenuationRadius));
     OutProperties.Add(TEXT("Direction"), FString::Printf(TEXT("%s"), *SpotLightInfo.Direction.ToString()));
     OutProperties.Add(TEXT("LightColor"), FString::Printf(TEXT("%s"), *SpotLightInfo.LightColor.ToString()));
     OutProperties.Add(TEXT("Intensity"), FString::Printf(TEXT("%f"), SpotLightInfo.Intensity));
     OutProperties.Add(TEXT("Type"), FString::Printf(TEXT("%d"), SpotLightInfo.Type));
     OutProperties.Add(TEXT("InnerRad"), FString::Printf(TEXT("%f"), SpotLightInfo.InnerRad));
     OutProperties.Add(TEXT("OuterRad"), FString::Printf(TEXT("%f"), SpotLightInfo.OuterRad));
-    OutProperties.Add(TEXT("Attenuation"), FString::Printf(TEXT("%f"), SpotLightInfo.Attenuation));
+    OutProperties.Add(TEXT("Falloff"), FString::Printf(TEXT("%f"), SpotLightInfo.Falloff));
 
 }
 
@@ -54,10 +54,10 @@ void USpotLightComponent::SetProperties(const TMap<FString, FString>& InProperti
     {
         SpotLightInfo.Position.InitFromString(*TempStr);
     }
-    TempStr = InProperties.Find(TEXT("Radius"));
+    TempStr = InProperties.Find(TEXT("AttenuationRadius"));
     if (TempStr)
     {
-        SpotLightInfo.Radius = FString::ToFloat(*TempStr);
+        SpotLightInfo.AttenuationRadius = FString::ToFloat(*TempStr);
     }
     TempStr = InProperties.Find(TEXT("Direction"));
     if (TempStr)
@@ -89,10 +89,10 @@ void USpotLightComponent::SetProperties(const TMap<FString, FString>& InProperti
     {
         SpotLightInfo.OuterRad = FString::ToFloat(*TempStr);
     }
-    TempStr = InProperties.Find(TEXT("Attenuation"));
+    TempStr = InProperties.Find(TEXT("Falloff"));
     if (TempStr)
     {
-        SpotLightInfo.Attenuation = FString::ToFloat(*TempStr);
+        SpotLightInfo.Falloff = FString::ToFloat(*TempStr);
     }
 }
 
