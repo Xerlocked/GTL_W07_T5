@@ -156,6 +156,10 @@ void FViewportResource::ClearRenderTargets(ID3D11DeviceContext* DeviceContext)
     {
         DeviceContext->ClearRenderTargetView(Resource.RTV, ClearColors[Type].data());
     }
+
+    /////////////////////////////////////
+    /// ShadowMap
+    DeviceContext->ClearDepthStencilView(DirectionalShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 void FViewportResource::ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type)
@@ -200,7 +204,7 @@ HRESULT FViewportResource::CreateDepthStencilResources()
     if (FAILED(hr))
     {
         return hr;
-    }
+    }    
     
     D3D11_DEPTH_STENCIL_VIEW_DESC DepthStencilViewDesc = {};
     DepthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -211,6 +215,7 @@ HRESULT FViewportResource::CreateDepthStencilResources()
     {
         return hr;
     }
+    
     hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(GizmoDepthStencilTexture,  &DepthStencilViewDesc,  &GizmoDepthStencilView);
     if (FAILED(hr))
     {
@@ -228,6 +233,49 @@ HRESULT FViewportResource::CreateDepthStencilResources()
         return hr;
     }
 
+    ////////////////////
+    /// shadow depth view 생성
+
+    D3D11_TEXTURE2D_DESC DirectionalShadowMapTextureDesc;
+    ZeroMemory(&DirectionalShadowMapTextureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+    DirectionalShadowMapTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    DirectionalShadowMapTextureDesc.MipLevels = 0;
+    DirectionalShadowMapTextureDesc.ArraySize = 1;
+    DirectionalShadowMapTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+    DirectionalShadowMapTextureDesc.CPUAccessFlags = 0;
+    DirectionalShadowMapTextureDesc.SampleDesc.Count = 1;
+    DirectionalShadowMapTextureDesc.SampleDesc.Quality = 0;
+    DirectionalShadowMapTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+    DirectionalShadowMapTextureDesc.Height = (UINT)DirectionalShadowMapHeight;
+    DirectionalShadowMapTextureDesc.Width = (UINT)DirectionalShadowMapWidth;
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&DirectionalShadowMapTextureDesc, nullptr, &DirectionalShadowMapTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_SHADER_RESOURCE_VIEW_DESC DepthStencilShaderResourceViewDesc;
+    ZeroMemory(&DepthStencilShaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+    DepthStencilShaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    DepthStencilShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    DepthStencilShaderResourceViewDesc.Texture2D.MipLevels = 1;
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(DirectionalShadowMapTexture, &DepthStencilShaderResourceViewDesc, &DirectionalShadowMapSRV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC DirectionalShadowMapDepthStencilViewDesc;
+    ZeroMemory(&DirectionalShadowMapDepthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+    DirectionalShadowMapDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    DirectionalShadowMapDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    DirectionalShadowMapDepthStencilViewDesc.Texture2D.MipSlice = 0;
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(DirectionalShadowMapTexture, &DirectionalShadowMapDepthStencilViewDesc, &DirectionalShadowMapDSV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
     return hr;
 }
 
@@ -248,6 +296,23 @@ void FViewportResource::ReleaseDepthStencilResources()
         DepthStencilTexture->Release();
         DepthStencilTexture = nullptr;
     }
+    
+    if (DirectionalShadowMapTexture)
+    {
+        DirectionalShadowMapTexture->Release();
+        DirectionalShadowMapTexture = nullptr;
+    }
+    if (DirectionalShadowMapDSV)
+    {
+        DirectionalShadowMapDSV->Release();
+        DirectionalShadowMapDSV = nullptr;
+    }
+    if (DirectionalShadowMapSRV)
+    {
+        DirectionalShadowMapSRV->Release();
+        DirectionalShadowMapSRV = nullptr;
+    }
+
 }
 
 void FViewportResource::ReleaseResources()

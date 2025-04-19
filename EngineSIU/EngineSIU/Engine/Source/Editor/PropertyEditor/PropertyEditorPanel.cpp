@@ -1,5 +1,6 @@
 #include "PropertyEditorPanel.h"
 
+#include "UnrealClient.h"
 #include "World/World.h"
 #include "Actors/Player.h"
 #include "Components/Light/LightComponent.h"
@@ -19,6 +20,8 @@
 #include "Components/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
 #include "Engine/AssetManager.h"
+#include "LevelEditor/SLevelEditor.h"
+#include "UnrealEd/EditorViewportClient.h"
 #include "UObject/UObjectIterator.h"
 
 void PropertyEditorPanel::Render()
@@ -233,6 +236,15 @@ void PropertyEditorPanel::Render()
                 LightDirection = dirlightObj->GetDirection();
                 FImGuiWidget::DrawVec3Control("Direction", LightDirection, 0, 85);
 
+                //TODO: ViewPort 받아서 거기있는 SRV 띄워야함
+                FViewportResource* ViewportResource = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetViewportResource();
+
+                ID3D11ShaderResourceView* DirectionalSRV = ViewportResource->GetDirectionalShadowMapSRV(); 
+
+                ImTextureID SRVID =  reinterpret_cast<ImTextureID>(DirectionalSRV);
+                
+                ImGui::Image(SRVID, ImVec2(200, 200));
+                
                 ImGui::TreePop();
             }
 

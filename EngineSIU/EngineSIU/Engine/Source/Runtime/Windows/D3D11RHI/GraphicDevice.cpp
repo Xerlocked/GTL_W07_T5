@@ -118,13 +118,23 @@ void FGraphicsDevice::CreateRasterizerState()
     RasterizerDesc.CullMode = D3D11_CULL_BACK;
     Device->CreateRasterizerState(&RasterizerDesc, &RasterizerSolidBack);
 
-    RasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    RasterizerDesc.CullMode = D3D11_CULL_FRONT;
-    Device->CreateRasterizerState(&RasterizerDesc, &RasterizerSolidFront);
-
     RasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
     RasterizerDesc.CullMode = D3D11_CULL_BACK;
     Device->CreateRasterizerState(&RasterizerDesc, &RasterizerWireframeBack);
+
+    RasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    RasterizerDesc.CullMode = D3D11_CULL_FRONT;
+    Device->CreateRasterizerState(&RasterizerDesc, &RasterizerSolidFront);
+    
+    RasterizerDesc.FrontCounterClockwise = FALSE;
+    RasterizerDesc.DepthBias = D3D11_DEFAULT_DEPTH_BIAS;
+    RasterizerDesc.DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
+    RasterizerDesc.SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+    RasterizerDesc.DepthClipEnable = TRUE;
+    RasterizerDesc.ScissorEnable = FALSE;
+    RasterizerDesc.MultisampleEnable = FALSE;
+    RasterizerDesc.AntialiasedLineEnable = FALSE;
+    Device->CreateRasterizerState(&RasterizerDesc, &RasterizerShadowMapFront);
 }
 
 void FGraphicsDevice::ReleaseDeviceAndSwapChain()

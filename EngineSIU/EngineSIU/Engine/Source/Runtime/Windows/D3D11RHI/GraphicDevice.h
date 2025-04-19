@@ -27,6 +27,7 @@ public:
     ID3D11RasterizerState* RasterizerSolidBack = nullptr;
     ID3D11RasterizerState* RasterizerSolidFront = nullptr;
     ID3D11RasterizerState* RasterizerWireframeBack = nullptr;
+    ID3D11RasterizerState* RasterizerShadowMapFront = nullptr;
 
     ID3D11DepthStencilState* DepthStencilState = nullptr;
     

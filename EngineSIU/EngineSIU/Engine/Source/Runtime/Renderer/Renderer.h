@@ -83,6 +83,7 @@ public:
     void CreateCommonShader();
 
 public:
+   
     FGraphicsDevice* Graphics;
     FDXDBufferManager* BufferManager;
     FDXDShaderManager* ShaderManager = nullptr;

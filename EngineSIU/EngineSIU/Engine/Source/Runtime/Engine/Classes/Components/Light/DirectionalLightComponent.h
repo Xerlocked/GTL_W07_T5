@@ -2,7 +2,7 @@
 #include "LightComponent.h"
 #include "UObject/ObjectMacros.h"
 
-class UDirectionalLightComponent : public ULightComponentBase
+class  UDirectionalLightComponent : public ULightComponentBase
 {
     DECLARE_CLASS(UDirectionalLightComponent, ULightComponentBase)
 
