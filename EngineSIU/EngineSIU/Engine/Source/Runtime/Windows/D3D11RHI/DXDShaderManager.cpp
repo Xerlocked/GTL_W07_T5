@@ -53,8 +53,8 @@ void FDXDShaderManager::UpdateShaderIfOutdated(const std::wstring Key, const std
         ShaderTimeStamps.Add(Key, currentTime);
         return;
     }
-    if (*FoundTime == currentTime) // Map에 저장된 마지막 수정 타임이 현재와 똑같을 경우
-        return;
+    //if (*FoundTime == currentTime) // Map에 저장된 마지막 수정 타임이 현재와 똑같을 경우
+    //    return;
 
     if (IsVertexShader)
     {
@@ -62,6 +62,7 @@ void FDXDShaderManager::UpdateShaderIfOutdated(const std::wstring Key, const std
         if (VertexShaders.Contains(Key)) { VertexShaders[Key]->Release(); VertexShaders[Key] = nullptr; }
         if (InputLayouts.Contains(Key)) { InputLayouts[Key]->Release();    InputLayouts[Key] = nullptr; }
 
+        ShaderTimeStamps[Key] = currentTime;
         (Defines)
             ? AddVertexShaderAndInputLayout(Key, FilePath, EntryPoint, Layout, LayoutSize, Defines)
             : AddVertexShaderAndInputLayout(Key, FilePath, EntryPoint, Layout, LayoutSize);

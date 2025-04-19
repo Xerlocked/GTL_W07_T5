@@ -4,8 +4,8 @@
 
 AAmbientLight::AAmbientLight()
 {
-    AmbientLightComponent = AddComponent<UAmbientLightComponent>();
-    BillboardComponent = AddComponent<UBillboardComponent>();
+    AmbientLightComponent = AddComponent<UAmbientLightComponent>("UAmbientLightComponent_0");
+    BillboardComponent = AddComponent<UBillboardComponent>("UBillboardComponent_0");
 
     RootComponent = BillboardComponent;
 
