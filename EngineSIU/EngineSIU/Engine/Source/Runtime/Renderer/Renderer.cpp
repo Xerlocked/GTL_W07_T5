@@ -343,3 +343,10 @@ void FRenderer::RenderViewport(const std::shared_ptr<FEditorViewportClient>& Vie
 {
     SlateRenderPass->Render(Viewport);
 }
+void FRenderer::UpdateAllShader() {
+    WorldBillboardRenderPass->OnShaderReload();
+    EditorBillboardRenderPass->OnShaderReload();
+    GizmoRenderPass->OnShaderReload();
+    LineRenderPass->OnShaderReload();
+    FogRenderPass->OnShaderReload();
+}
