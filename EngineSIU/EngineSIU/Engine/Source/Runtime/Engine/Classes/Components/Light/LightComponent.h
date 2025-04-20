@@ -19,6 +19,7 @@ public:
     
     FMatrix ViewMatrix;
     FMatrix ProjectionMatrix;
+    FVector LightCameraPos;
 
 protected:
 

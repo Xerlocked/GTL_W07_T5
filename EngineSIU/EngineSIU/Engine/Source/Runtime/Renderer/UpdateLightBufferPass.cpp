@@ -94,9 +94,9 @@ void FUpdateLightBufferPass::PrepareRender()
 
 void FUpdateLightBufferPass::Render(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
-    UpdateLightBuffer();
-    
     BakeShadowMap(Viewport);
+    
+    UpdateLightBuffer();
 }
 
 void FUpdateLightBufferPass::ClearRenderArr()
@@ -245,6 +245,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].LightPosition = Light->LightCameraPos;
             SpotLightsCount++;
         }
     }
@@ -257,6 +258,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.PointLights[PointLightsCount].Position = Light->GetWorldLocation();
             LightBufferData.PointLights[PointLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.PointLights[PointLightsCount].LightPosition = Light->LightCameraPos;
             PointLightsCount++;
         }
     }
@@ -269,6 +271,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.Directional[DirectionalLightsCount].Direction = Light->GetDirection();
             LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.Directional[DirectionalLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.Directional[DirectionalLightsCount].LightPosition = Light->LightCameraPos;
             DirectionalLightsCount++;
         }
     }

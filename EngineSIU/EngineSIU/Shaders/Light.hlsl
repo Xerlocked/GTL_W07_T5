@@ -12,7 +12,7 @@
 #define AMBIENT_LIGHT       4
 
 Texture2D DirectionalShadowMap : register(t2);
-SamplerComparisonState ShadowMapSampler : register(s2);
+SamplerState ShadowMapSampler : register(s2);
 
 struct FAmbientLightInfo
 {
@@ -28,6 +28,9 @@ struct FDirectionalLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
+
+    float3 DirectionalLightPosition;
+    float FDirectionalLightInfoPadding1;
 };
 
 struct FPointLightInfo
@@ -44,6 +47,9 @@ struct FPointLightInfo
     
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
+
+    float3 DirectionalLightPosition;
+    float FDirectionalLightInfoPadding1;
 };
 
 struct FSpotLightInfo
@@ -63,6 +69,9 @@ struct FSpotLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
+
+    float3 DirectionalLightPosition;
+    float FDirectionalLightInfoPadding1;
 };
 
 cbuffer Lighting : register(b0)
@@ -190,13 +199,25 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity * Shadow, 1.0);
 }
 
+float2 NDCToUV(float3 NDC)
+{
+    float2 UV = (NDC.xy * 0.5) + 0.5;
+    UV.y *= -1;
+    return UV;
+}
+
 float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
 {
     FDirectionalLightInfo LightInfo = Directional[nIndex];
 
-    // float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, UV).rgb;
-    // Texture2D a = DirectionalShadowMap;
-    // SamplerState b = ShadowMapSampler;
+    float4 LightView = mul(float4(WorldPosition,1.0), LightInfo.LightViewMatrix);
+    float4 LightClipPos = mul(LightView, LightInfo.LightProjectionMatrix);
+    float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
+    float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
+    float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, ShadowMapUV).rgb;
+
+    // float3 LightDistance = distance(WorldPosition, LightInfo.)
+    
     
     float3 LightDir = normalize(-LightInfo.Direction);
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
