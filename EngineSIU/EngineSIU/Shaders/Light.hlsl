@@ -193,15 +193,15 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
 #endif
     
-    matrix vp = LightInfo.LightViewMatrix * LightInfo.LightProjectionMatrix;
+    row_major matrix vp = mul(LightInfo.LightViewMatrix, LightInfo.LightProjectionMatrix);
     float4 LightPos = mul(float4(WorldPosition, 1.f), vp);
     float3 ShadowMapNDC = LightPos.xyz / LightPos.w;
     float2 LightUV = NDCToUV(ShadowMapNDC);
-    float Depth = LightPos.z / LightPos.w * 0.5f + 0.5f;
+    float Depth = LightPos.z / LightPos.w;
     float Shadow = 1.0f;
     if (all(LightUV >= 0.0f && LightUV <= 1.0f))
     {
-        DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth).r;
+        Shadow = DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth).r;
     }
     
     return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity * Shadow, 1.0);
