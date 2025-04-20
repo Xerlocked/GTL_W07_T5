@@ -11,7 +11,7 @@
 #define DIRECTIONAL_LIGHT   3
 #define AMBIENT_LIGHT       4
 
-Texture2D<float> DirectionalShadowMap : register(t2);
+Texture2D DirectionalShadowMap : register(t2);
 SamplerComparisonState ShadowMapSampler : register(s2);
 
 struct FAmbientLightInfo
@@ -90,7 +90,7 @@ cbuffer Lighting : register(b0)
 float2 NDCToUV(float3 NDC)
 {
     float2 UV = (NDC.xy * 0.5) + 0.5;
-    UV.y *= -1;
+    UV.y = 1 - UV.y;
     return UV;
 }
 
@@ -192,7 +192,7 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
     float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
 #endif
-
+    
     matrix vp = LightInfo.LightViewMatrix * LightInfo.LightProjectionMatrix;
     float4 LightPos = mul(float4(WorldPosition, 1.f), vp);
     float3 ShadowMapNDC = LightPos.xyz / LightPos.w;
@@ -209,28 +209,40 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
 
 
 
-float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
+
+
+float ShadowCalculation(int nIndex, float3 WorldPos)
 {
     FDirectionalLightInfo LightInfo = Directional[nIndex];
 
-    float4 LightView = mul(float4(WorldPosition,1.0), LightInfo.LightViewMatrix);
+    float4 LightView = mul(float4(WorldPos,1.0), LightInfo.LightViewMatrix);
     float4 LightClipPos = mul(LightView, LightInfo.LightProjectionMatrix);
     float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
-    // float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, ShadowMapUV).rgb;
+    float LightDistance = ShadowMapNDC.z;
 
-    // float3 LightDistance = distance(WorldPosition, LightInfo.)
+    float Bias = 0.001;
+    LightDistance -= Bias;
     
+    float ShadowMapDepth = DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, ShadowMapUV, LightDistance).r;
+    return ShadowMapDepth;
+}
+
+float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
+{
+    FDirectionalLightInfo LightInfo = Directional[nIndex];
     
     float3 LightDir = normalize(-LightInfo.Direction);
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
     float DiffuseFactor = CalculateDiffuse(WorldNormal, LightDir);
     
+    float shadow = ShadowCalculation(nIndex, WorldPosition);
 #ifdef LIGHTING_MODEL_LAMBERT
-    float3 Lit = DiffuseFactor * DiffuseColor * LightInfo.LightColor.rgb;
+    float3 Lit = ((DiffuseFactor * DiffuseColor) * shadow) * LightInfo.LightColor.rgb;
 #else
+    
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
-    float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
+    float3 Lit = (((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * shadow) * LightInfo.LightColor.rgb;
 #endif
     return float4(Lit * LightInfo.Intensity, 1.0);
 }

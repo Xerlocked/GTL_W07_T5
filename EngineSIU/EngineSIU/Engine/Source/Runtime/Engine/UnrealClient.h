@@ -113,8 +113,8 @@ private:
     ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
     ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
     
-    // int DirectionalShadowMapWidth = 4096;
-    // int DirectionalShadowMapHeight = 4096;
+    // int ShadowMapWidth = 4096;
+    // int ShadowMapHeight = 4096;
     int ShadowMapWidth = 1024;
     int ShadowMapHeight = 1024;
     
