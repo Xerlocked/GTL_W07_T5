@@ -199,7 +199,10 @@ void FGizmoRenderPass::RenderGizmoComponent(UGizmoBaseComponent* GizmoComp, cons
         return;
     }
 
-    OnShaderReload();
+    if (ShaderManager->WasShaderUpdated(L"StaticMeshVertexShader") || ShaderManager->WasShaderUpdated(L"GizmoPixelShader"))
+    {
+        OnShaderReload();
+    }
     PrepareRenderState();
     
     // 오브젝트 버퍼 업데이트

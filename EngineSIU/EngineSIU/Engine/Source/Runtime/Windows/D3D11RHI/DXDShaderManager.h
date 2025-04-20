@@ -44,6 +44,18 @@ public:
     void UpdateShaderIfOutdated(const std::wstring Key, const std::wstring FilePath, const std::string EntryPoint, bool IsVertexShader, const D3D_SHADER_MACRO * Defines = nullptr, const D3D11_INPUT_ELEMENT_DESC * Layout = nullptr, uint32 LayoutSize = 0);
     void RegisterShaderForReload(std::wstring Key, std::wstring FilePath, std::string EntryPoint, bool IsVertexShader, D3D_SHADER_MACRO* Defines = nullptr, D3D11_INPUT_ELEMENT_DESC* Layout = nullptr, uint32 LayoutSize = 0);
     void ReloadAllShaders();
+    // DXDShaderManager.h
+    TSet<std::wstring> UpdatedShaderKeys; 
+
+    bool WasShaderUpdated(const std::wstring& Key) const
+    {
+        return UpdatedShaderKeys.Contains(Key);
+    }
+
+    void ClearShaderUpdateRecord()
+    {
+        UpdatedShaderKeys.Empty();
+    }
 
     // Dependency Graph 관련 함수
     void BuildDependency(const FShaderReloadInfo& Info);

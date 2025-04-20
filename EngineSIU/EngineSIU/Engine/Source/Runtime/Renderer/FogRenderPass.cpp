@@ -118,7 +118,10 @@ void FFogRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& Viewpo
 
     Graphics->DeviceContext->PSSetShaderResources(static_cast<UINT>(EShaderSRVSlot::SRV_SceneDepth), 1, &ViewportResource->GetDepthStencilSRV());
     
-    OnShaderReload();
+    if (ShaderManager->WasShaderUpdated(L"FogVertexShader") || ShaderManager->WasShaderUpdated(L"FogPixelShader"))
+    {
+        OnShaderReload();
+    }
     PrepareRenderState();
     
     for (const auto& Fog : FogComponents)

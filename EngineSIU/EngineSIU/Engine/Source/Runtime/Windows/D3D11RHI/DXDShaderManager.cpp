@@ -111,41 +111,45 @@ void FDXDShaderManager::RegisterShaderForReload(std::wstring Key, std::wstring F
 }
 
 // 모든 리로드 대상 Shader에 대해 업데이트 시도
-void FDXDShaderManager::ReloadAllShaders()  
-{  
-   auto Copied = RegisteredShaders;
-   bool bAnyUpdated = false;
-   for (const auto& Shader : Copied)
-   {  
-       if (!IsOutdatedWithDependency(Shader)) { continue; } // 갱신 필요없으면 skip
+void FDXDShaderManager::ReloadAllShaders()
+{
+    auto Copied = RegisteredShaders;
+    bool bAnyUpdated = false;
+    UpdatedShaderKeys.Empty(); // 매 프레임 클리어
 
-       const D3D_SHADER_MACRO* definesPtr = Shader.Defines.empty() ? nullptr : Shader.Defines.data();
-       const D3D11_INPUT_ELEMENT_DESC* layoutPtr = Shader.Layout.empty() ? nullptr : Shader.Layout.data();
-       UpdateShaderIfOutdated(
-           Shader.Key,
-           Shader.FilePath,
-           Shader.EntryPoint,
-           Shader.IsVertexShader,
-           definesPtr,
-           layoutPtr,
-           static_cast<uint32>(Shader.Layout.size())
-       );
-       UE_LOG(LogLevel::Display, TEXT("%ls Updated"), Shader.Key.c_str());
+    for (const auto& Shader : Copied)
+    {
+        if (!IsOutdatedWithDependency(Shader)) continue;
 
-       // 업데이트 후, 해당 셰이더 자신과 인클루드하는 모든 파일 타임스탬프 갱신
-       if (std::filesystem::exists(Shader.FilePath))
-       {
-           ShaderTimeStamps[Shader.Key] = std::filesystem::last_write_time(Shader.FilePath);
-       }
-       bAnyUpdated = true;
-       
-   }
+        const auto* defines = Shader.Defines.empty() ? nullptr : Shader.Defines.data();
+        const auto* layout = Shader.Layout.empty() ? nullptr : Shader.Layout.data();
 
-   // 하나라도 업데이트 된 경우, 의존성 그래프에 있는 모든 include 파일들의 타임스탬프를 갱신
-   if (bAnyUpdated) { UpdateDependencyTimestamps();
-   }
-  // FEngineLoop::Renderer.UpdateAllShader();
+        if (Shader.IsVertexShader)
+        {
+            (defines)
+                ? AddVertexShaderAndInputLayout(Shader.Key, Shader.FilePath, Shader.EntryPoint, layout, (uint32)Shader.Layout.size(), defines)
+                : AddVertexShaderAndInputLayout(Shader.Key, Shader.FilePath, Shader.EntryPoint, layout, (uint32)Shader.Layout.size());
+        }
+        else
+        {
+            (defines)
+                ? AddPixelShader(Shader.Key, Shader.FilePath, Shader.EntryPoint, defines)
+                : AddPixelShader(Shader.Key, Shader.FilePath, Shader.EntryPoint);
+        }
+
+        UE_LOG(LogLevel::Display, TEXT("%ls Updated"), Shader.Key.c_str());
+        ShaderTimeStamps[Shader.Key] = std::filesystem::last_write_time(Shader.FilePath);
+
+        UpdatedShaderKeys.Add(Shader.Key); // ⭐ 기록
+        bAnyUpdated = true;
+    }
+
+    if (bAnyUpdated)
+    {
+        UpdateDependencyTimestamps();
+    }
 }
+
 
 
 

@@ -122,7 +122,10 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     int DirectionalLightsCount=0;
     int SpotLightCount = 0;
 
-    OnShaderReload();
+    if (ShaderManager->WasShaderUpdated(L"ShaderMapVertexShader") || ShaderManager->WasShaderUpdated(L"StaticMeshVertexShader"))
+    {
+        OnShaderReload();
+    }
     PrepareRenderState();
 
     // Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

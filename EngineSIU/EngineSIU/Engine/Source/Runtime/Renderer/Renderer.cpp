@@ -250,6 +250,8 @@ void FRenderer::Render(const std::shared_ptr<FEditorViewportClient>& Viewport)
     CompositingPass->Render(Viewport);
 
     EndRender();
+    ShaderManager->ClearShaderUpdateRecord();
+
 }
 
 void FRenderer::EndRender()

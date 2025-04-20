@@ -150,7 +150,10 @@ void FBillboardRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& 
     FRenderTargetRHI* RenderTargetRHI = ViewportResource->GetRenderTarget(ResourceType);
     Graphics->DeviceContext->OMSetRenderTargets(1, &RenderTargetRHI->RTV, ViewportResource->GetDepthStencilView());
 
-    OnShaderReload();
+    if (ShaderManager->WasShaderUpdated(L"VertexBillboardShader")|| ShaderManager->WasShaderUpdated(L"PixelBillboardShader"))
+    {
+        OnShaderReload();
+    }
 
     PrepareTextureShader();
     PrepareSubUVConstant();

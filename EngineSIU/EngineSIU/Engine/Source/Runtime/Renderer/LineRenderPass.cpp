@@ -100,7 +100,10 @@ void FLineRenderPass::UpdateObjectConstant(const FMatrix& WorldMatrix, const FVe
 
 void FLineRenderPass::ProcessLineRendering(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
-    OnShaderReload();
+    if (ShaderManager->WasShaderUpdated(L"VertexLineShader") || ShaderManager->WasShaderUpdated(L"PixelLineShader"))
+    {
+        OnShaderReload();
+    }
     PrepareLineShader();
 
     // 상수 버퍼 업데이트: Identity 모델, 기본 색상 등
