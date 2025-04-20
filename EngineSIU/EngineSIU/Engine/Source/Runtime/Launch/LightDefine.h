@@ -21,6 +21,9 @@ struct FDirectionalLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
+
+    FVector LightPosition;
+    float FDirectionalLightInfoPadding1;
 };
 
 struct FPointLightInfo
@@ -37,6 +40,9 @@ struct FPointLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
+
+    FVector LightPosition;
+    float FDirectionalLightInfoPadding1;
 };
 
 struct FSpotLightInfo
@@ -56,6 +62,9 @@ struct FSpotLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
+
+    FVector LightPosition;
+    float FDirectionalLightInfoPadding1;
 };
 
 struct alignas(16) FLightInfoBuffer
