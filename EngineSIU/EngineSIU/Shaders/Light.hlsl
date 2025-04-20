@@ -11,8 +11,8 @@
 #define DIRECTIONAL_LIGHT   3
 #define AMBIENT_LIGHT       4
 
-Texture2D DirectionalShadowMap : register(t2);
-SamplerState ShadowMapSampler : register(s2);
+Texture2D<float> DirectionalShadowMap : register(t2);
+SamplerComparisonState ShadowMapSampler : register(s2);
 
 struct FAmbientLightInfo
 {
@@ -86,6 +86,13 @@ cbuffer Lighting : register(b0)
     int SpotLightsCount;
     int AmbientLightsCount;
 };
+
+float2 NDCToUV(float3 NDC)
+{
+    float2 UV = (NDC.xy * 0.5) + 0.5;
+    UV.y *= -1;
+    return UV;
+}
 
 float CalculateAttenuation(float Distance, float AttenuationRadius, float Falloff)
 {
@@ -188,7 +195,8 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
 
     matrix vp = LightInfo.LightViewMatrix * LightInfo.LightProjectionMatrix;
     float4 LightPos = mul(float4(WorldPosition, 1.f), vp);
-    float2 LightUV = LightPos.xy / LightPos.w * 0.5f + 0.5f;
+    float3 ShadowMapNDC = LightPos.xyz / LightPos.w;
+    float2 LightUV = NDCToUV(ShadowMapNDC);
     float Depth = LightPos.z / LightPos.w * 0.5f + 0.5f;
     float Shadow = 1.0f;
     if (all(LightUV >= 0.0f && LightUV <= 1.0f))
@@ -199,12 +207,7 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity * Shadow, 1.0);
 }
 
-float2 NDCToUV(float3 NDC)
-{
-    float2 UV = (NDC.xy * 0.5) + 0.5;
-    UV.y *= -1;
-    return UV;
-}
+
 
 float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
 {
@@ -214,7 +217,7 @@ float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, fl
     float4 LightClipPos = mul(LightView, LightInfo.LightProjectionMatrix);
     float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
-    float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, ShadowMapUV).rgb;
+    // float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, ShadowMapUV).rgb;
 
     // float3 LightDistance = distance(WorldPosition, LightInfo.)
     
