@@ -117,115 +117,114 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
     PrepareRenderState();
 
-    // Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    // Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
-    //
-    // for (auto Light : SpotLights)
-    // {
-    //     if (SpotLightCount < MAX_DIRECTIONAL_LIGHT)
-    //     {
-    //         //Light기준 Camera Update
-    //         FVector LightPos = Light->GetWorldLocation();  
-    //         FVector LightDir = Light->GetForwardVector().GetSafeNormal();
-    //         FVector TargetPos = LightPos + LightDir;
-    //         
-    //         FCameraConstantBuffer LightViewCameraConstant;
-    //         LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
-    //
-    //         float AspectRatio = Viewport->GetD3DViewport().Width / Viewport->GetD3DViewport().Height;
-    //         float ViewFOV = 90;
-    //         float LightNearClip = 0.1;
-    //         float LightFarClip = 100.0;
-    //         
-    //         LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
-    //             FMath::DegreesToRadians(ViewFOV),
-    //             AspectRatio,
-    //             LightNearClip,
-    //             LightFarClip
-    //         ); //spotlight 거리만큼 Far값 + a
-    //         
-    //         BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
-    //
-    //         for (UStaticMeshComponent* Comp : StaticMeshComponents)
-    //         {
-    //             if (!Comp || !Comp->GetStaticMesh())
-    //             {
-    //                 continue;
-    //             }
-    //
-    //             OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
-    //             if (RenderData == nullptr)
-    //             {
-    //                 continue;
-    //             }
-    //             
-    //             FMatrix WorldMatrix = Comp->GetWorldMatrix();
-    //             
-    //             UpdateObjectConstant(WorldMatrix);
-    //             
-    //             RenderPrimitive(RenderData);
-    //         }
-    //
-    //         SpotLightCount++;
-    //     }
-    // }
-
-     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
-
-     for (auto Light : DirectionalLights)
-     {
-         if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
-         {
-             //Light기준 Camera Update
-             // FVector LightDir = Light->GetDirection().GetSafeNormal();
-             FVector LightDir = Light->GetDirection().GetSafeNormal();
-             FVector LightPos = -LightDir * (Viewport->FarClip/2);
-             FVector TargetPos = LightPos + LightDir;
-             // FVector TargetPos = FVector::ZeroVector;
-             
-             FCameraConstantBuffer LightViewCameraConstant;
-             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
-
-             Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
-             
-             // 오쏘그래픽 너비는 줌 값과 가로세로 비율에 따라 결정됩니다.
-             float OrthoWidth = Viewport->OrthoSize * Viewport->AspectRatio;
-             float OrthoHeight = Viewport->OrthoSize;
-             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
-                 OrthoWidth,
-                 OrthoHeight,
-                 Viewport->NearClip,
-                 Viewport->FarClip
-             );
-
-             Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
-             
-             BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
+    Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
     
-             for (UStaticMeshComponent* Comp : StaticMeshComponents)
-             {
-                 if (!Comp || !Comp->GetStaticMesh())
-                 {
-                     continue;
-                 }
+    for (auto Light : SpotLights)
+    {
+        if (SpotLightCount < MAX_SPOT_LIGHT)
+        {
+            //Light 기준 Camera Update
+            FVector LightPos = Light->GetWorldLocation();
+            FVector LightDir = Light->GetDirection();
+            FVector TargetPos = LightPos + LightDir;
+            
+            FCameraConstantBuffer LightViewCameraConstant;
+            LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
+
+            Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
+            
+            LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
+                FMath::DegreesToRadians(Light->GetOuterDegree() * 2.0f),
+                1.0f,
+                0.1f,
+                Light->GetAttenuationRadius()
+            );
+
+            Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
+            
+            BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
     
-                 OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
-                 if (RenderData == nullptr)
-                 {
-                     continue;
-                 }
-                 
-                 FMatrix WorldMatrix = Comp->GetWorldMatrix();
-                 
-                 UpdateObjectConstant(WorldMatrix);
-                 
-                 RenderPrimitive(RenderData);
-             }
+            for (UStaticMeshComponent* Comp : StaticMeshComponents)
+            {
+                if (!Comp || !Comp->GetStaticMesh())
+                {
+                    continue;
+                }
     
-             DirectionalLightsCount++;
-         }
-     }
+                OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
+                if (RenderData == nullptr)
+                {
+                    continue;
+                }
+                
+                FMatrix WorldMatrix = Comp->GetWorldMatrix();
+                
+                UpdateObjectConstant(WorldMatrix);
+                
+                RenderPrimitive(RenderData);
+            }
+    
+            SpotLightCount++;
+        }
+    }
+     //
+     // Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+     // Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
+     //
+     // for (auto Light : DirectionalLights)
+     // {
+     //     if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
+     //     {
+     //         //Light기준 Camera Update
+     //         // FVector LightDir = Light->GetDirection().GetSafeNormal();
+     //         FVector LightDir = Light->GetDirection().GetSafeNormal();
+     //         FVector LightPos = -LightDir * (Viewport->FarClip/2);
+     //         FVector TargetPos = LightPos + LightDir;
+     //         // FVector TargetPos = FVector::ZeroVector;
+     //         
+     //         FCameraConstantBuffer LightViewCameraConstant;
+     //         LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
+     //
+     //         Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
+     //         
+     //         // 오쏘그래픽 너비는 줌 값과 가로세로 비율에 따라 결정됩니다.
+     //         float OrthoWidth = Viewport->OrthoSize * Viewport->AspectRatio;
+     //         float OrthoHeight = Viewport->OrthoSize;
+     //         LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
+     //             OrthoWidth,
+     //             OrthoHeight,
+     //             Viewport->NearClip,
+     //             Viewport->FarClip
+     //         );
+     //
+     //         Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
+     //         
+     //         BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
+     //
+     //         for (UStaticMeshComponent* Comp : StaticMeshComponents)
+     //         {
+     //             if (!Comp || !Comp->GetStaticMesh())
+     //             {
+     //                 continue;
+     //             }
+     //
+     //             OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
+     //             if (RenderData == nullptr)
+     //             {
+     //                 continue;
+     //             }
+     //             
+     //             FMatrix WorldMatrix = Comp->GetWorldMatrix();
+     //             
+     //             UpdateObjectConstant(WorldMatrix);
+     //             
+     //             RenderPrimitive(RenderData);
+     //         }
+     //
+     //         DirectionalLightsCount++;
+     //     }
+     // }
 }
 
 void FUpdateLightBufferPass::UpdateLightBuffer() const

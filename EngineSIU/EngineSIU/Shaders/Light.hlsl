@@ -12,7 +12,7 @@
 #define AMBIENT_LIGHT       4
 
 Texture2D DirectionalShadowMap : register(t2);
-SamplerState ShadowMapSampler : register(s2);
+SamplerComparisonState ShadowMapSampler : register(s2);
 
 struct FAmbientLightInfo
 {
@@ -176,8 +176,18 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
     float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
 #endif
+
+    matrix vp = LightInfo.LightViewMatrix * LightInfo.LightProjectionMatrix;
+    float4 LightPos = mul(float4(WorldPosition, 1.f), vp);
+    float2 LightUV = LightPos.xy / LightPos.w * 0.5f + 0.5f;
+    float Depth = LightPos.z / LightPos.w * 0.5f + 0.5f;
+    float Shadow = 1.0f;
+    if (all(LightUV >= 0.0f && LightUV <= 1.0f))
+    {
+        DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth).r;
+    }
     
-    return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity, 1.0);
+    return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity * Shadow, 1.0);
 }
 
 float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
@@ -185,8 +195,8 @@ float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, fl
     FDirectionalLightInfo LightInfo = Directional[nIndex];
 
     // float3 ShadowMap = DirectionalShadowMap.Sample(ShadowMapSampler, UV).rgb;
-    Texture2D a = DirectionalShadowMap;
-    SamplerState b = ShadowMapSampler;
+    // Texture2D a = DirectionalShadowMap;
+    // SamplerState b = ShadowMapSampler;
     
     float3 LightDir = normalize(-LightInfo.Direction);
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
