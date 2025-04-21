@@ -21,9 +21,6 @@ struct FDirectionalLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
-
-    FVector LightPosition;
-    float FDirectionalLightInfoPadding1;
 };
 
 struct FPointLightInfo
@@ -40,9 +37,6 @@ struct FPointLightInfo
 
     FMatrix LightViewMatrix[6];
     FMatrix LightProjectionMatrix;
-
-    FVector LightPosition;
-    float FDirectionalLightInfoPadding1;
 };
 
 struct FSpotLightInfo
@@ -62,9 +56,6 @@ struct FSpotLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
-
-    FVector LightPosition;
-    float FDirectionalLightInfoPadding1;
 };
 
 struct alignas(16) FLightInfoBuffer
@@ -78,4 +69,8 @@ struct alignas(16) FLightInfoBuffer
     int PointLightsCount;
     int SpotLightsCount;
     int AmbientLightsCount;
+
+    float ShadowMapWidth;
+    float ShadowMapHeight;
+    FVector2D ShadowMapPadding;
 };

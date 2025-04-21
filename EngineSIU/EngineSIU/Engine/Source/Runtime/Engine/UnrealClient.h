@@ -111,6 +111,11 @@ public:
 
     std::array<float, 4> GetClearColor(EResourceType Type) const;
     
+    // inline static int ShadowMapWidth = 1024;
+    // inline static int ShadowMapHeight = 1024;
+    inline static int ShadowMapWidth = 4096;
+    inline static int ShadowMapHeight = 4096;
+    
 private:
     // DirectX
     D3D11_VIEWPORT D3DViewport = {};
@@ -133,11 +138,6 @@ private:
 
     ID3D11ShaderResourceView* PointShadowMapFaceSRVs[6] = {};
 
-    
-    // int ShadowMapWidth = 4096;
-    // int ShadowMapHeight = 4096;
-    int ShadowMapWidth = 1024;
-    int ShadowMapHeight = 1024;
     
     ID3D11Texture2D* GizmoDepthStencilTexture = nullptr;
     ID3D11DepthStencilView* GizmoDepthStencilView = nullptr;
