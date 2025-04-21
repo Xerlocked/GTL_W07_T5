@@ -310,14 +310,14 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
 
 void FUpdateLightBufferPass::CreateShader()
 {
-    HRESULT hr = ShaderManager->AddVertexShaderAndInputLayout(L"ShaderMapVertexShader", L"Shaders/ShaderMapVertexShader.hlsl", "mainVS",
+    HRESULT hr = ShaderManager->AddVertexShaderAndInputLayout(L"ShadowMapVertexShader", L"Shaders/ShadowMapVertexShader.hlsl", "mainVS",
                                                               ShaderManager->StaticMeshLayoutDesc, ARRAYSIZE(ShaderManager->StaticMeshLayoutDesc));
     if (FAILED(hr))
     {
         return;
     }
 
-    VertexShader = ShaderManager->GetVertexShaderByKey(L"ShaderMapVertexShader");
+    VertexShader = ShaderManager->GetVertexShaderByKey(L"ShadowMapVertexShader");
     InputLayout = ShaderManager->GetInputLayoutByKey(L"StaticMeshVertexShader");
 }
 
