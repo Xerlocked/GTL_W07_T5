@@ -206,7 +206,7 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
     float LightDistance = ShadowMapNDC.z;  
   
-    float Bias = 0.000001;
+    // float Bias = 0.0005;
     // LightDistance -= Bias;
 
     float Shadow = 0.f;
@@ -231,7 +231,6 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     }
     Shadow /= 9;
 
-    // float ShadowMapDepth = DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, ShadowMapUV, LightDistance).r;
     return Shadow;
 }
 

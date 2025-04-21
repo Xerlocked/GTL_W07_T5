@@ -55,7 +55,7 @@ void FUpdateLightBufferPass::PrepareRenderState()
 {
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Graphics->DeviceContext->IASetInputLayout(InputLayout);
-    Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapFront);
+    Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapBack);
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(nullptr, nullptr, 0); // 픽셀 쉐이더는 필요없음.
     Graphics->DeviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
