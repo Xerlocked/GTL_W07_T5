@@ -188,7 +188,63 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
                 RenderPrimitive(RenderData);
             }
+
             SpotLightCount++;
+        }
+    }
+
+    Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
+
+    for (auto Light : DirectionalLights)
+    {
+        if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
+        {
+            //Light기준 Camera Update
+            FVector LightDir = Light->GetDirection().GetSafeNormal();
+            FVector LightPos = -LightDir * (Viewport->FarClip / 2);
+            FVector TargetPos = LightPos + LightDir;
+            // FVector TargetPos = FVector::ZeroVector;
+            FCameraConstantBuffer LightViewCameraConstant;
+
+            LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
+
+            Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
+
+            Light->LightCameraPos = LightPos;
+
+            LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
+                100,
+                100,
+                Viewport->NearClip,
+                Viewport->FarClip
+            );
+
+            Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
+
+            BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
+
+            for (UStaticMeshComponent* Comp : StaticMeshComponents)
+            {
+                if (!Comp || !Comp->GetStaticMesh())
+                {
+                    continue;
+                }
+
+                OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
+                if (RenderData == nullptr)
+                {
+                    continue;
+                }
+
+                FMatrix WorldMatrix = Comp->GetWorldMatrix();
+
+                UpdateObjectConstant(WorldMatrix);
+
+                RenderPrimitive(RenderData);
+            }
+
+            DirectionalLightsCount++;
         }
     }
 // 0:+X, 1:-X, 2:+Y, 3:-Y, 4:+Z, 5:-Z 순서로 Face 지정

@@ -131,6 +131,7 @@ private:
     ID3D11Texture2D* SpotShadowMapTexture = nullptr;
     ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
     ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
+    
 
     ID3D11Texture2D* PointShadowMapTexture = nullptr;
     ID3D11DepthStencilView* PointShadowMapDSV = nullptr;

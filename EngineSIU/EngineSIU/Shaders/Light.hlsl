@@ -48,10 +48,6 @@ struct FPointLightInfo
     
     row_major matrix LightViewMatrix[6];
     row_major matrix LightProjectionMatrix;
-
-    float3 PointLightPosition;
-    float FDirectionalLightInfoPadding1;
-
 };
 
 struct FSpotLightInfo
