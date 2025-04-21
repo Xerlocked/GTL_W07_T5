@@ -70,7 +70,7 @@ float4 mainPS(PS_INPUT_StaticMesh Input) : SV_Target
     
     if (bIsSelected)
     {
-        FinalColor += float4(0.01, 0.01, 0.0, 1);
+        FinalColor += float4(0.2, 0.2, 0.2, 1);
     }
     
     return FinalColor;

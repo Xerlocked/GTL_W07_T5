@@ -116,6 +116,13 @@ void FUpdateLightBufferPass::ClearRenderArr()
     StaticMeshComponents.Empty();
 }
 
+void FUpdateLightBufferPass::OnShaderReload()
+{
+    VertexShader = ShaderManager->GetVertexShaderByKey(L"ShaderMapVertexShader");
+    InputLayout = ShaderManager->GetInputLayoutByKey(L"StaticMeshVertexShader");
+}
+
+
 void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
     FViewportResource* ViewportResource = Viewport->GetViewportResource();
@@ -123,6 +130,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     int DirectionalLightsCount = 0;
     int SpotLightCount = 0;
 
+    OnShaderReload();
     PrepareRenderState();
 
     UINT OriginalViewportCount = 1;
@@ -146,8 +154,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             FCameraConstantBuffer LightViewCameraConstant;
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
 
-            Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
-
+            Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
+            
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
                 FMath::DegreesToRadians(Light->GetOuterDegree() * 2.0f),
                 1.0f,
@@ -178,11 +186,78 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
                 RenderPrimitive(RenderData);
             }
-
             SpotLightCount++;
         }
     }
+// 0:+X, 1:-X, 2:+Y, 3:-Y, 4:+Z, 5:-Z 순서로 Face 지정
+static const FVector LookDirections[6] = {
+    FVector( +1,  0,  0 ),  // +X
+    FVector( -1,  0,  0 ),  // -X
+    FVector(  0, +1,  0 ),  // +Y
+    FVector(  0, -1,  0 ),  // -Y
+    FVector(  0,  0, +1 ),  // +Z
+    FVector(  0,  0, -1 )   // -Z
+};
 
+// Z축(up)과 colinear하지 않도록, Z‑face만 Y축을 up으로 사용
+static const FVector UpDirections[6] = {
+    FVector( 0, 1, 0 ),  // +X face → up = +Z
+    FVector( 0, 1, 0 ),  // -X face → up = +Z
+    FVector( 0, 0, -1 ),  // +Y face → up = +Z
+    FVector( 0, 0, 1 ),  // -Y face → up = +Z
+    FVector( 0, 1, 0 ),  // +Z face → up = +Y
+    FVector( 0, 1, 0 )   // -Z face → up = +Y
+};
+
+
+
+    ID3D11Texture2D* PointShadowTex = ViewportResource->GetPointLightMapTexture();
+
+    for (auto Light : PointLights)
+    {
+        FVector LightPos = Light->GetWorldLocation();
+        float Near = 0.01f;
+        float Far = Light->GetAttenuationRadius();
+
+        for (int Face = 0; Face < 6; ++Face)
+        {
+            Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
+
+            D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+            dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+            dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsvDesc.Texture2DArray.MipSlice = 0;
+            dsvDesc.Texture2DArray.FirstArraySlice = Face;
+            dsvDesc.Texture2DArray.ArraySize = 1;
+
+            ID3D11DepthStencilView* FaceDSV = nullptr;
+            Graphics->Device->CreateDepthStencilView(PointShadowTex, &dsvDesc, &FaceDSV);
+
+            Graphics->DeviceContext->ClearDepthStencilView(FaceDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+            Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, FaceDSV);
+
+            FCameraConstantBuffer LightViewCamera;
+            LightViewCamera.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, LightPos + LookDirections[Face], UpDirections[Face]);
+            LightViewCamera.ProjectionMatrix = JungleMath::CreateProjectionMatrix(FMath::DegreesToRadians(90.0f), 1.0f, Near, Far);
+
+            Light->ViewMatrix[Face] = LightViewCamera.ViewMatrix;
+            Light->ProjectionMatrix = LightViewCamera.ProjectionMatrix;
+
+            BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCamera);
+
+            for (UStaticMeshComponent* Comp : StaticMeshComponents)
+            {
+                if (!Comp || !Comp->GetStaticMesh()) continue;
+                OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
+                if (!RenderData) continue;
+
+                UpdateObjectConstant(Comp->GetWorldMatrix());
+                RenderPrimitive(RenderData);
+            }
+
+            FaceDSV->Release();
+        }
+    }
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
 
@@ -239,6 +314,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     }
     Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+    
+    
 }
 
 void FUpdateLightBufferPass::UpdateLightBuffer() const
@@ -257,7 +334,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount] = Light->GetSpotLightInfo();
             LightBufferData.SpotLights[SpotLightsCount].Position = Light->GetWorldLocation();
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
-            LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             SpotLightsCount++;
         }
@@ -269,7 +346,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
         {
             LightBufferData.PointLights[PointLightsCount] = Light->GetPointLightInfo();
             LightBufferData.PointLights[PointLightsCount].Position = Light->GetWorldLocation();
-            LightBufferData.PointLights[PointLightsCount].LightViewMatrix = Light->ViewMatrix;
+            for(int i = 0; i<6; i++)
+            LightBufferData.PointLights[PointLightsCount].LightViewMatrix[i] = Light->ViewMatrix[i];
             LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             PointLightsCount++;
         }
@@ -281,7 +359,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
         {
             LightBufferData.Directional[DirectionalLightsCount] = Light->GetDirectionalLightInfo();
             LightBufferData.Directional[DirectionalLightsCount].Direction = Light->GetDirection();
-            LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix;
+            LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.Directional[DirectionalLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             DirectionalLightsCount++;
         }
