@@ -305,7 +305,7 @@ void FStaticMeshRenderPass::Render(const std::shared_ptr<FEditorViewportClient>&
     Graphics->DeviceContext->OMSetRenderTargets(1, &RenderTargetRHI->RTV, ViewportResource->GetDepthStencilView());
     ViewportResource->ClearRenderTarget(Graphics->DeviceContext, ResourceType);
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    
+    OnShaderReload();
     PrepareRenderState(Viewport);
 
     PrepareShadowMap(Viewport);
@@ -348,3 +348,13 @@ void FStaticMeshRenderPass::ClearRenderArr()
     StaticMeshComponents.Empty();
 }
 
+void FStaticMeshRenderPass::OnShaderReload()
+{
+    // 공통 셰이더
+    DebugDepthShader = ShaderManager->GetPixelShaderByKey(L"StaticMeshPixelShaderDepth");
+    DebugWorldNormalShader = ShaderManager->GetPixelShaderByKey(L"StaticMeshPixelShaderWorldNormal");
+
+    // ViewModeIndex에 따라 선택적으로 다시 설정
+    // 현재 ViewModeIndex를 저장하고 있다면 그것 기준으로 ChangeViewMode 호출 가능
+    ChangeViewMode(EViewModeIndex::VMI_Lit_BlinnPhong); // 또는 현재 모드 기억해뒀다가 호출
+}
