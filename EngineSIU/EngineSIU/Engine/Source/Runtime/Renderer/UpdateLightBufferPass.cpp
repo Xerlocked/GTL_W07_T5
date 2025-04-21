@@ -118,7 +118,7 @@ void FUpdateLightBufferPass::ClearRenderArr()
 
 void FUpdateLightBufferPass::OnShaderReload()
 {
-    VertexShader = ShaderManager->GetVertexShaderByKey(L"ShaderMapVertexShader");
+    VertexShader = ShaderManager->GetVertexShaderByKey(L"ShadowMapVertexShader");
     InputLayout = ShaderManager->GetInputLayoutByKey(L"StaticMeshVertexShader");
 }
 
