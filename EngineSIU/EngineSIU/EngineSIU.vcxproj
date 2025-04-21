@@ -469,7 +469,7 @@
     <ClInclude Include="Engine\Source\ThirdParty\JSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\ShaderMapVertexShader.hlsl">
+    <FxCompile Include="Shaders\ShadowMapVertexShader.hlsl">
       <EntryPointName>mainVS</EntryPointName>
       <ShaderModel>5.0</ShaderModel>
       <ShaderType>Vertex</ShaderType>
