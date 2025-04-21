@@ -40,6 +40,14 @@ void FUpdateLightBufferPass::Initialize(FDXDBufferManager* InBufferManager, FGra
     Graphics = InGraphics;
     ShaderManager = InShaderManager;
 
+    // viewport for shadow map
+    ShadowViewport.Width = 1024;
+    ShadowViewport.Height = 1024;
+    ShadowViewport.MinDepth = 0.0f;
+    ShadowViewport.MaxDepth = 1.0f;
+    ShadowViewport.TopLeftX = 0;
+    ShadowViewport.TopLeftY = 0;
+    
     CreateShader();
 }
 
@@ -173,36 +181,36 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
      Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
      Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
 
+     UINT OriginalViewportCount = 1;
+     D3D11_VIEWPORT OriginalViewport = {};
+     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
+     Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
+     
      for (auto Light : DirectionalLights)
      {
          if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
          {
              //Light기준 Camera Update
-             // FVector LightDir = Light->GetDirection().GetSafeNormal();
              FVector LightDir = Light->GetDirection().GetSafeNormal();
              FVector LightPos = -LightDir * (Viewport->FarClip/2);
              FVector TargetPos = LightPos + LightDir;
              // FVector TargetPos = FVector::ZeroVector;
              FCameraConstantBuffer LightViewCameraConstant;
-
-             Light->LightCameraPos = LightPos;
              
              LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
 
              Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
              
-             // 오쏘그래픽 너비는 줌 값과 가로세로 비율에 따라 결정됩니다.
-             float OrthoWidth = Viewport->OrthoSize * Viewport->AspectRatio;
-             float OrthoHeight = Viewport->OrthoSize;
+             Light->LightCameraPos = LightPos;
+             
              LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
-                 OrthoWidth,
-                 OrthoHeight,
+                 100,
+                 100,
                  Viewport->NearClip,
                  Viewport->FarClip
              );
 
              Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
-
              
              BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
     
@@ -229,6 +237,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
              DirectionalLightsCount++;
          }
      }
+     Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);
+     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
 void FUpdateLightBufferPass::UpdateLightBuffer() const

@@ -204,10 +204,10 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     float4 LightClipPos = mul(LightView, LightInfo.LightProjectionMatrix);
     float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
-    float LightDistance = ShadowMapNDC.z;
-
+    float LightDistance = ShadowMapNDC.z;  
+  
     float Bias = 0.001;
-    LightDistance -= Bias;
+    // LightDistance -= Bias;
     
     float ShadowMapDepth = DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, ShadowMapUV, LightDistance).r;
     return ShadowMapDepth;
