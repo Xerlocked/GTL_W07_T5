@@ -40,6 +40,15 @@ void FUpdateLightBufferPass::Initialize(FDXDBufferManager* InBufferManager, FGra
     Graphics = InGraphics;
     ShaderManager = InShaderManager;
 
+    // viewport for shadow map
+    ShadowViewport.Width = 1024;
+    ShadowViewport.Height = 1024;
+    ShadowViewport.MinDepth = 0.0f;
+    ShadowViewport.MaxDepth = 1.0f;
+    ShadowViewport.TopLeftX = 0;
+    ShadowViewport.TopLeftY = 0;
+
+    
     CreateShader();
 }
 
@@ -117,6 +126,12 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
     PrepareRenderState();
 
+    UINT OriginalViewportCount = 1;
+    D3D11_VIEWPORT OriginalViewport = {};
+    Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
+    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
+    
+    
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
     
@@ -168,6 +183,10 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             SpotLightCount++;
         }
     }
+    
+    Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);
+    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+    
      //
      // Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
      // Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());

@@ -12,6 +12,8 @@
 #define AMBIENT_LIGHT       4
 
 Texture2D DirectionalShadowMap : register(t2);
+Texture2D SpotShadowMap : register(t3);
+
 SamplerComparisonState ShadowMapSampler : register(s2);
 
 struct FAmbientLightInfo
@@ -201,7 +203,7 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float Shadow = 1.0f;
     if (all(LightUV >= 0.0f && LightUV <= 1.0f))
     {
-        Shadow = DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth).r;
+        Shadow = SpotShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth);
     }
     
     return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity * Shadow, 1.0);
