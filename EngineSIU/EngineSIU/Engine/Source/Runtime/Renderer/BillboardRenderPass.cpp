@@ -136,6 +136,13 @@ void FBillboardRenderPass::ReleaseShader()
 {
 }
 
+void FBillboardRenderPass::OnShaderReload()
+{
+    VertexShader = ShaderManager->GetVertexShaderByKey(L"VertexBillboardShader");
+    InputLayout = ShaderManager->GetInputLayoutByKey(L"VertexBillboardShader");
+    PixelShader = ShaderManager->GetPixelShaderByKey(L"PixelBillboardShader");
+}
+
 void FBillboardRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
     FViewportResource* ViewportResource = Viewport->GetViewportResource();
@@ -143,8 +150,9 @@ void FBillboardRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& 
     FRenderTargetRHI* RenderTargetRHI = ViewportResource->GetRenderTarget(ResourceType);
     Graphics->DeviceContext->OMSetRenderTargets(1, &RenderTargetRHI->RTV, ViewportResource->GetDepthStencilView());
 
-    PrepareTextureShader();
+    OnShaderReload();
 
+    PrepareTextureShader();
     PrepareSubUVConstant();
 
     FVertexInfo VertexInfo;

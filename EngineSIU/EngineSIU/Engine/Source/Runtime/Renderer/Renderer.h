@@ -101,6 +101,7 @@ public:
     FPostProcessCompositingPass* PostProcessCompositingPass = nullptr;
     
     FSlateRenderPass* SlateRenderPass = nullptr;
+    void UpdateAllShader();
 };
 
 template<typename T>

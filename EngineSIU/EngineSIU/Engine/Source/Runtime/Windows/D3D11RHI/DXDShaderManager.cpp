@@ -5,6 +5,8 @@
 #include <sstream>
 #include <unordered_set>
 #include <functional>
+#include "Renderer/Renderer.h"
+#include "EngineLoop.h"
 
 FDXDShaderManager::FDXDShaderManager(ID3D11Device* Device)
     : DXDDevice(Device)
@@ -58,10 +60,6 @@ void FDXDShaderManager::UpdateShaderIfOutdated(const std::wstring Key, const std
 
     if (IsVertexShader)
     {
-        // Vertex Shader Map에 존재한다면 해당 VS, Input Layout 제거
-        if (VertexShaders.Contains(Key)) { VertexShaders[Key]->Release(); VertexShaders[Key] = nullptr; }
-        if (InputLayouts.Contains(Key)) { InputLayouts[Key]->Release();    InputLayouts[Key] = nullptr; }
-
         ShaderTimeStamps[Key] = currentTime;
         (Defines)
             ? AddVertexShaderAndInputLayout(Key, FilePath, EntryPoint, Layout, LayoutSize, Defines)
@@ -69,11 +67,6 @@ void FDXDShaderManager::UpdateShaderIfOutdated(const std::wstring Key, const std
     }
     else
     {
-        // Pixel Shader Map에 존재한다면 해당 PS 제거
-        if (PixelShaders.Contains(Key)) { 
-            PixelShaders[Key]->Release();
-            PixelShaders[Key] = nullptr;
-        }
         ShaderTimeStamps[Key] = currentTime;
         (Defines)
             ? AddPixelShader(Key, FilePath, EntryPoint, Defines)
@@ -114,6 +107,7 @@ void FDXDShaderManager::RegisterShaderForReload(std::wstring Key, std::wstring F
     }
     
     BuildDependency(Info); // 해당 셰이더 파일이 포함하는 셰이더(헤더) 파일을 모두 찾아 graph, date 기록
+ 
 }
 
 // 모든 리로드 대상 Shader에 대해 업데이트 시도
@@ -144,10 +138,13 @@ void FDXDShaderManager::ReloadAllShaders()
            ShaderTimeStamps[Shader.Key] = std::filesystem::last_write_time(Shader.FilePath);
        }
        bAnyUpdated = true;
+       
    }
 
    // 하나라도 업데이트 된 경우, 의존성 그래프에 있는 모든 include 파일들의 타임스탬프를 갱신
-   if (bAnyUpdated) { UpdateDependencyTimestamps(); }
+   if (bAnyUpdated) { UpdateDependencyTimestamps();
+   }
+  // FEngineLoop::Renderer.UpdateAllShader();
 }
 
 
@@ -392,6 +389,13 @@ HRESULT FDXDShaderManager::AddPixelShader(const std::wstring& Key, const std::ws
     {
         RegisterShaderForReload(Key, FileName, EntryPoint, false, nullptr, nullptr, 0);
     }
+
+    // Pixel Shader Map에 존재한다면 해당 PS 제거
+    if (PixelShaders.Contains(Key)) {
+        PixelShaders[Key]->Release();
+        PixelShaders[Key] = nullptr;
+    }
+
     PixelShaders[Key] = NewPixelShader;
     
 
@@ -442,6 +446,11 @@ HRESULT FDXDShaderManager::AddPixelShader(const std::wstring& Key, const std::ws
     if (SUCCEEDED(hr) && !PixelShaders.Contains(Key))
     {
         RegisterShaderForReload(Key, FileName, EntryPoint, false, const_cast<D3D_SHADER_MACRO*>(defines), nullptr, 0);
+    }
+    // Pixel Shader Map에 존재한다면 해당 PS 제거
+    if (PixelShaders.Contains(Key)) {
+        PixelShaders[Key]->Release();
+        PixelShaders[Key] = nullptr;
     }
 	PixelShaders[Key] = NewPixelShader;
 	return S_OK;
@@ -579,6 +588,9 @@ HRESULT FDXDShaderManager::AddVertexShaderAndInputLayout(const std::wstring& Key
     {
         RegisterShaderForReload(Key, FileName, EntryPoint, true, nullptr, const_cast<D3D11_INPUT_ELEMENT_DESC*>(Layout), LayoutSize);
     }
+    // Vertex Shader Map에 존재한다면 해당 VS, Input Layout 제거
+    if (VertexShaders.Contains(Key)) { VertexShaders[Key]->Release(); VertexShaders[Key] = nullptr; }
+    if (InputLayouts.Contains(Key)) { InputLayouts[Key]->Release();    InputLayouts[Key] = nullptr; }
 
     VertexShaders[Key] = NewVertexShader;
     InputLayouts[Key] = NewInputLayout;
@@ -631,7 +643,9 @@ HRESULT FDXDShaderManager::AddVertexShaderAndInputLayout(const std::wstring& Key
     {
         RegisterShaderForReload(Key, FileName, EntryPoint, true, const_cast<D3D_SHADER_MACRO*>(defines), const_cast<D3D11_INPUT_ELEMENT_DESC*>(Layout), LayoutSize);
     }
-
+    // Vertex Shader Map에 존재한다면 해당 VS, Input Layout 제거
+    if (VertexShaders.Contains(Key)) { VertexShaders[Key]->Release(); VertexShaders[Key] = nullptr; }
+    if (InputLayouts.Contains(Key)) { InputLayouts[Key]->Release();    InputLayouts[Key] = nullptr; }
     VertexShaders[Key] = NewVertexShader;
     InputLayouts[Key] = NewInputLayout;
     return S_OK;
