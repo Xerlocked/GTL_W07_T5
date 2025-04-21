@@ -291,9 +291,13 @@ void FStaticMeshRenderPass::PrepareShadowMap(const std::shared_ptr<FEditorViewpo
 
     ID3D11ShaderResourceView* SpotLightShadowMapSRV = ViewportResource->GetSpotShadowMapSRV();
 
+    ID3D11ShaderResourceView* PointLightShadowMapSRV = ViewportResource->GetPointShadowMapSRV();
+
     Graphics->DeviceContext->PSSetSamplers(2, 1, &ShadowMapSampler);
     
     Graphics->DeviceContext->PSSetShaderResources(3, 1, &SpotLightShadowMapSRV);
+
+    Graphics->DeviceContext->PSSetShaderResources(4, 1, &PointLightShadowMapSRV);
 }
 
 void FStaticMeshRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& Viewport)

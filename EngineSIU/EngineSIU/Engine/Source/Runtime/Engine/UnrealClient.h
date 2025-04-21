@@ -79,10 +79,24 @@ public:
     ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
     ID3D11ShaderResourceView*& GetSpotShadowMapSRV() { return SpotShadowMapSRV; }
 
+    ID3D11Texture2D*& GetPointLightMapTexture() { return PointShadowMapTexture;}
+    ID3D11DepthStencilView*& GetPointShadowMapDSV() { return PointShadowMapDSV;}
+    ID3D11ShaderResourceView*& GetPointShadowMapSRV() { return PointShadowMapSRV; }
+
     ID3D11Texture2D*& GetGizmoDepthStencilTexture() { return GizmoDepthStencilTexture; }
     ID3D11DepthStencilView*& GetGizmoDepthStencilView() { return GizmoDepthStencilView; }
 
+    ID3D11ShaderResourceView* GetPointShadowMapFaceSRV(uint32 FaceIndex) const
+    {
+        if (FaceIndex >= 6) return nullptr;
+        return PointShadowMapFaceSRVs[FaceIndex];
+    }
+
+
+
     TMap<EResourceType, FRenderTargetRHI>& GetRenderTargets();
+
+
 
     // 해당 타입의 리소스를 리턴. 없는 경우에는 생성해서 리턴.
     FRenderTargetRHI* GetRenderTarget(EResourceType Type);
@@ -112,6 +126,13 @@ private:
     ID3D11Texture2D* SpotShadowMapTexture = nullptr;
     ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
     ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
+
+    ID3D11Texture2D* PointShadowMapTexture = nullptr;
+    ID3D11DepthStencilView* PointShadowMapDSV = nullptr;
+    ID3D11ShaderResourceView* PointShadowMapSRV = nullptr;
+
+    ID3D11ShaderResourceView* PointShadowMapFaceSRVs[6] = {};
+
     
     // int ShadowMapWidth = 4096;
     // int ShadowMapHeight = 4096;
@@ -124,6 +145,10 @@ private:
     TMap<EResourceType, FRenderTargetRHI> RenderTargets;
 
     HRESULT CreateDepthStencilResources();
+
+    HRESULT CreateCubeShadowMapResources();
+
+    HRESULT CreatePointShadowMapFaceSRVs();
 
     void ReleaseDepthStencilResources();
     void ReleaseResources();

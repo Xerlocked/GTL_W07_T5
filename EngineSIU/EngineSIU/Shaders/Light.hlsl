@@ -13,6 +13,8 @@
 
 Texture2D DirectionalShadowMap : register(t2);
 Texture2D SpotShadowMap : register(t3);
+TextureCube<float> PointShadowMap : register(t4); // ← float 필수!
+
 
 SamplerComparisonState ShadowMapSampler : register(s2);
 
@@ -50,7 +52,7 @@ struct FPointLightInfo
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
 
-    float3 DirectionalLightPosition;
+    float3 PointLightPosition;
     float FDirectionalLightInfoPadding1;
 };
 
@@ -147,7 +149,25 @@ float CalculateSpecular(float3 WorldNormal, float3 ToLightDir, float3 ViewDir, f
     return Spec * SpecularStrength;
 }
 
-float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float WorldViewPosition, float3 DiffuseColor)
+float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos)
+{
+    float3 LightToFrag = WorldPos - LightInfo.Position;
+    float Distance = length(LightToFrag);
+
+    float3 SampleDir = normalize(LightToFrag);
+
+
+    float Bias = 0.01;
+
+    float ShadowDepth = Distance - Bias;
+    
+    float Shadow = PointShadowMap.SampleCmpLevelZero(ShadowMapSampler, SampleDir, ShadowDepth);
+
+    return Shadow;
+}
+
+
+float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
 {
     FPointLightInfo LightInfo = PointLights[Index];
     
@@ -169,8 +189,8 @@ float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float Wor
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
     float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
 #endif
-    
-    return float4(Lit * Attenuation * LightInfo.Intensity, 1.0);
+    float Shadow = PointShadowCalculation(LightInfo, WorldPosition);
+    return float4(Lit * Attenuation * LightInfo.Intensity * Shadow, 1.0);
 }
 
 float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
