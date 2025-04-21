@@ -41,8 +41,8 @@ void FUpdateLightBufferPass::Initialize(FDXDBufferManager* InBufferManager, FGra
     ShaderManager = InShaderManager;
 
     // viewport for shadow map
-    ShadowViewport.Width = 1024;
-    ShadowViewport.Height = 1024;
+    ShadowViewport.Width = FViewportResource::ShadowMapWidth; //1024;
+    ShadowViewport.Height = FViewportResource::ShadowMapHeight; //1024
     ShadowViewport.MinDepth = 0.0f;
     ShadowViewport.MaxDepth = 1.0f;
     ShadowViewport.TopLeftX = 0;
@@ -259,7 +259,6 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
-            LightBufferData.SpotLights[SpotLightsCount].LightPosition = Light->LightCameraPos;
             SpotLightsCount++;
         }
     }
@@ -272,7 +271,6 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.PointLights[PointLightsCount].Position = Light->GetWorldLocation();
             LightBufferData.PointLights[PointLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
-            LightBufferData.PointLights[PointLightsCount].LightPosition = Light->LightCameraPos;
             PointLightsCount++;
         }
     }
@@ -285,7 +283,6 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.Directional[DirectionalLightsCount].Direction = Light->GetDirection();
             LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.Directional[DirectionalLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
-            LightBufferData.Directional[DirectionalLightsCount].LightPosition = Light->LightCameraPos;
             DirectionalLightsCount++;
         }
     }
@@ -304,6 +301,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
     LightBufferData.PointLightsCount = PointLightsCount;
     LightBufferData.SpotLightsCount = SpotLightsCount;
     LightBufferData.AmbientLightsCount = AmbientLightsCount;
+    LightBufferData.ShadowMapWidth = FViewportResource::ShadowMapWidth;
+    LightBufferData.ShadowMapHeight = FViewportResource::ShadowMapHeight;
 
     BufferManager->UpdateConstantBuffer(TEXT("FLightInfoBuffer"), LightBufferData);
     
