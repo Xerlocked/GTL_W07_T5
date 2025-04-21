@@ -98,7 +98,9 @@ void USpotLightComponent::SetProperties(const TMap<FString, FString>& InProperti
 
 FVector USpotLightComponent::GetDirection()
 {
-    return GetWorldMatrix().GetAxis(0).GetSafeNormal();
+    FRotator rotator = GetWorldRotation();
+    FVector WorldDown = rotator.ToQuaternion().RotateVector(GetForwardVector());
+    return WorldDown;  
 }
 
 const FSpotLightInfo& USpotLightComponent::GetSpotLightInfo() const

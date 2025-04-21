@@ -1,5 +1,6 @@
 #include "PropertyEditorPanel.h"
 
+#include "UnrealClient.h"
 #include "World/World.h"
 #include "Actors/Player.h"
 #include "Components/Light/LightComponent.h"
@@ -19,6 +20,8 @@
 #include "Components/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
 #include "Engine/AssetManager.h"
+#include "LevelEditor/SLevelEditor.h"
+#include "UnrealEd/EditorViewportClient.h"
 #include "UObject/UObjectIterator.h"
 
 void PropertyEditorPanel::Render()
@@ -32,6 +35,8 @@ void PropertyEditorPanel::Render()
 
     ImVec2 MinSize(140, 370);
     ImVec2 MaxSize(FLT_MAX, 900);
+
+    FViewportResource* ViewportResource = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetViewportResource();
 
     /* Min, Max Size */
     ImGui::SetNextWindowSizeConstraints(MinSize, MaxSize);
@@ -47,8 +52,6 @@ void PropertyEditorPanel::Render()
 
     /* Render Start */
     ImGui::Begin("Detail", nullptr, PanelFlags);
-
-
 
     UEditorEngine* Engine = Cast<UEditorEngine>(GEngine);
     if (!Engine)
@@ -173,6 +176,23 @@ void PropertyEditorPanel::Render()
                 if (ImGui::DragFloat("Falloff", &Falloff, 0.01f, 0.01f, 10.f, "%.3f")) {
                     pointlightObj->SetFalloff(Falloff);
                 }
+                ID3D11ShaderResourceView* CubeSRV = ViewportResource->GetPointShadowMapSRV();
+                ImTextureID SRVID = reinterpret_cast<ImTextureID>(CubeSRV);
+
+                ImGui::Text("Point Light ShadowMap Faces:");
+                ImGui::Columns(3, nullptr, false);
+
+                for (int i = 0; i < 6; ++i)
+                {
+                    ImGui::Text("Face %d", i);
+                    ID3D11ShaderResourceView* SRV = ViewportResource->GetPointShadowMapFaceSRV(i);
+                    ImTextureID TexID = reinterpret_cast<ImTextureID>(SRV);
+                    ImGui::Image(TexID, ImVec2(96, 96));
+                    ImGui::NextColumn();
+                }
+                ImGui::Columns(1);
+
+
 
 
                 ImGui::TreePop();
@@ -219,6 +239,12 @@ void PropertyEditorPanel::Render()
                     spotlightObj->SetFalloff(Falloff);
                 }
 
+                ID3D11ShaderResourceView* SpotSRV = ViewportResource->GetSpotShadowMapSRV(); 
+
+                ImTextureID SRVID = reinterpret_cast<ImTextureID>(SpotSRV);
+                
+                ImGui::Image(SRVID, ImVec2(200, 200));
+                
                 ImGui::TreePop();
             }
 
@@ -243,6 +269,12 @@ void PropertyEditorPanel::Render()
                 LightDirection = dirlightObj->GetDirection();
                 FImGuiWidget::DrawVec3Control("Direction", LightDirection, 0, 85);
 
+                ID3D11ShaderResourceView* DirectionalSRV = ViewportResource->GetDirectionalShadowMapSRV(); 
+
+                ImTextureID SRVID = reinterpret_cast<ImTextureID>(DirectionalSRV);
+                
+                ImGui::Image(SRVID, ImVec2(200, 200));
+                
                 ImGui::TreePop();
             }
 

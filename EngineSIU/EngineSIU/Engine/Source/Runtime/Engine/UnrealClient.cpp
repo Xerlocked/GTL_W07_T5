@@ -156,6 +156,11 @@ void FViewportResource::ClearRenderTargets(ID3D11DeviceContext* DeviceContext)
     {
         DeviceContext->ClearRenderTargetView(Resource.RTV, ClearColors[Type].data());
     }
+
+    /////////////////////////////////////
+    /// ShadowMap
+    DeviceContext->ClearDepthStencilView(DirectionalShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    DeviceContext->ClearDepthStencilView(SpotShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 void FViewportResource::ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type)
@@ -200,8 +205,10 @@ HRESULT FViewportResource::CreateDepthStencilResources()
     if (FAILED(hr))
     {
         return hr;
-    }
-    
+    }    
+    hr = CreateCubeShadowMapResources();
+    if (FAILED(hr)) return hr;
+
     D3D11_DEPTH_STENCIL_VIEW_DESC DepthStencilViewDesc = {};
     DepthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     DepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
@@ -211,6 +218,7 @@ HRESULT FViewportResource::CreateDepthStencilResources()
     {
         return hr;
     }
+    
     hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(GizmoDepthStencilTexture,  &DepthStencilViewDesc,  &GizmoDepthStencilView);
     if (FAILED(hr))
     {
@@ -228,6 +236,65 @@ HRESULT FViewportResource::CreateDepthStencilResources()
         return hr;
     }
 
+    ////////////////////
+    /// shadow depth view 생성
+
+    D3D11_TEXTURE2D_DESC DirectionalShadowMapTextureDesc;
+    ZeroMemory(&DirectionalShadowMapTextureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+    DirectionalShadowMapTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    DirectionalShadowMapTextureDesc.MipLevels = 0;
+    DirectionalShadowMapTextureDesc.ArraySize = 1;
+    DirectionalShadowMapTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+    DirectionalShadowMapTextureDesc.CPUAccessFlags = 0;
+    DirectionalShadowMapTextureDesc.SampleDesc.Count = 1;
+    DirectionalShadowMapTextureDesc.SampleDesc.Quality = 0;
+    DirectionalShadowMapTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+    DirectionalShadowMapTextureDesc.Height = (UINT)ShadowMapHeight;
+    DirectionalShadowMapTextureDesc.Width = (UINT)ShadowMapWidth;
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&DirectionalShadowMapTextureDesc, nullptr, &DirectionalShadowMapTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&DirectionalShadowMapTextureDesc, nullptr, &SpotShadowMapTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_SHADER_RESOURCE_VIEW_DESC DepthStencilShaderResourceViewDesc;
+    ZeroMemory(&DepthStencilShaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+    DepthStencilShaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    DepthStencilShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    DepthStencilShaderResourceViewDesc.Texture2D.MipLevels = 1;
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(DirectionalShadowMapTexture, &DepthStencilShaderResourceViewDesc, &DirectionalShadowMapSRV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(SpotShadowMapTexture, &DepthStencilShaderResourceViewDesc, &SpotShadowMapSRV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_DEPTH_STENCIL_VIEW_DESC DirectionalShadowMapDepthStencilViewDesc;
+    ZeroMemory(&DirectionalShadowMapDepthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+    DirectionalShadowMapDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    DirectionalShadowMapDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    DirectionalShadowMapDepthStencilViewDesc.Texture2D.MipSlice = 0;
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(DirectionalShadowMapTexture, &DirectionalShadowMapDepthStencilViewDesc, &DirectionalShadowMapDSV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(SpotShadowMapTexture, &DirectionalShadowMapDepthStencilViewDesc, &SpotShadowMapDSV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
     return hr;
 }
 
@@ -247,6 +314,45 @@ void FViewportResource::ReleaseDepthStencilResources()
     {
         DepthStencilTexture->Release();
         DepthStencilTexture = nullptr;
+    }
+    
+    if (DirectionalShadowMapTexture)
+    {
+        DirectionalShadowMapTexture->Release();
+        DirectionalShadowMapTexture = nullptr;
+    }
+    if (DirectionalShadowMapDSV)
+    {
+        DirectionalShadowMapDSV->Release();
+        DirectionalShadowMapDSV = nullptr;
+    }
+    if (DirectionalShadowMapSRV)
+    {
+        DirectionalShadowMapSRV->Release();
+        DirectionalShadowMapSRV = nullptr;
+    }
+    if (SpotShadowMapTexture)
+    {
+        SpotShadowMapTexture->Release();
+        SpotShadowMapTexture = nullptr;
+    }
+    if (SpotShadowMapDSV)
+    {
+        SpotShadowMapDSV->Release();
+        SpotShadowMapDSV = nullptr;
+    }
+    if (SpotShadowMapSRV)
+    {
+        SpotShadowMapSRV->Release();
+        SpotShadowMapSRV = nullptr;
+    }
+     for (int i = 0; i < 6; ++i)
+    {
+        if (PointShadowMapFaceSRVs[i])
+        {
+            PointShadowMapFaceSRVs[i]->Release();
+            PointShadowMapFaceSRVs[i] = nullptr;
+        }
     }
 }
 
@@ -343,3 +449,75 @@ bool FViewport::bIsHovered(const FVector2D& InPoint) const
     return (Rect.TopLeftX <= static_cast<float>(InPoint.X) && static_cast<float>(InPoint.X) <= Rect.TopLeftX + Rect.Width) &&
            (Rect.TopLeftY <= static_cast<float>(InPoint.Y) && static_cast<float>(InPoint.Y) <= Rect.TopLeftY + Rect.Height);
 }
+
+HRESULT FViewportResource::CreateCubeShadowMapResources()
+{
+    HRESULT hr = S_OK;
+
+    // 1. Texture2D (Cube)
+    D3D11_TEXTURE2D_DESC cubeDesc = {};
+    cubeDesc.Width = ShadowMapWidth;
+    cubeDesc.Height = ShadowMapHeight;
+    cubeDesc.MipLevels = 1;
+    cubeDesc.ArraySize = 6;
+    cubeDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    cubeDesc.SampleDesc.Count = 1;
+    cubeDesc.Usage = D3D11_USAGE_DEFAULT;
+    cubeDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    cubeDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&cubeDesc, nullptr, &PointShadowMapTexture);
+    if (FAILED(hr)) return hr;
+
+    // 2. SRV
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+    srvDesc.TextureCube.MipLevels = 1;
+    srvDesc.TextureCube.MostDetailedMip = 0;
+
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(PointShadowMapTexture, &srvDesc, &PointShadowMapSRV);
+    if (FAILED(hr)) return hr;
+
+    // 3. DSV (Texture2DArray for cube faces)
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+    dsvDesc.Texture2DArray.MipSlice = 0;
+    dsvDesc.Texture2DArray.ArraySize = 6;
+    dsvDesc.Texture2DArray.FirstArraySlice = 0;
+
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(PointShadowMapTexture, &dsvDesc, &PointShadowMapDSV);
+    if (FAILED(hr)) return hr;
+
+    hr = CreatePointShadowMapFaceSRVs();
+    if (FAILED(hr)) return hr;
+    return hr;
+}
+
+HRESULT FViewportResource::CreatePointShadowMapFaceSRVs()
+{
+    HRESULT hr = S_OK;
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC desc = {};
+    desc.Format = DXGI_FORMAT_R32_FLOAT;
+    desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+    desc.Texture2DArray.MipLevels = 1;
+    desc.Texture2DArray.MostDetailedMip = 0;
+    desc.Texture2DArray.ArraySize = 1;
+
+    for (int i = 0; i < 6; ++i)
+    {
+        desc.Texture2DArray.FirstArraySlice = i;
+
+        hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(PointShadowMapTexture, &desc, &PointShadowMapFaceSRVs[i]);
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+    }
+
+    return hr;
+}
+
+

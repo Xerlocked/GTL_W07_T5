@@ -144,6 +144,24 @@ void FStaticMeshRenderPass::Initialize(FDXDBufferManager* InBufferManager, FGrap
     ShaderManager = InShaderManager;
 
     CreateShader();
+
+    D3D11_SAMPLER_DESC comparisonSamplerDesc;
+    ZeroMemory(&comparisonSamplerDesc, sizeof(D3D11_SAMPLER_DESC));
+    comparisonSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    comparisonSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    comparisonSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    comparisonSamplerDesc.BorderColor[0] = 1.0f;
+    comparisonSamplerDesc.BorderColor[1] = 1.0f;
+    comparisonSamplerDesc.BorderColor[2] = 1.0f;
+    comparisonSamplerDesc.BorderColor[3] = 1.0f;
+    comparisonSamplerDesc.MinLOD = 0.f;
+    comparisonSamplerDesc.MaxLOD = 0.f;
+    comparisonSamplerDesc.MipLODBias = 0.f;
+    comparisonSamplerDesc.MaxAnisotropy = 0;
+    comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+    
+    Graphics->Device->CreateSamplerState(&comparisonSamplerDesc, &ShadowMapSampler);
 }
 
 void FStaticMeshRenderPass::PrepareRender()
@@ -267,21 +285,23 @@ void FStaticMeshRenderPass::RenderPrimitive(OBJ::FStaticMeshRenderData* RenderDa
     }
 }
 
-void FStaticMeshRenderPass::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const
+void FStaticMeshRenderPass::PrepareShadowMap(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
-    UINT Stride = sizeof(FStaticMeshVertex);
-    UINT Offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &Offset);
-    Graphics->DeviceContext->Draw(numVertices, 0);
-}
+    FViewportResource* ViewportResource = Viewport->GetViewportResource();
 
-void FStaticMeshRenderPass::RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const
-{
-    UINT Stride = sizeof(FStaticMeshVertex);
-    UINT Offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
-    Graphics->DeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-    Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
+    ID3D11ShaderResourceView* DirectionalLightShadowMapSRV = ViewportResource->GetDirectionalShadowMapSRV();
+    
+    ID3D11ShaderResourceView* SpotLightShadowMapSRV = ViewportResource->GetSpotShadowMapSRV();
+
+    ID3D11ShaderResourceView* PointLightShadowMapSRV = ViewportResource->GetPointShadowMapSRV();
+
+    Graphics->DeviceContext->PSSetSamplers(2, 1, &ShadowMapSampler);
+    
+    Graphics->DeviceContext->PSSetShaderResources(2, 1, &DirectionalLightShadowMapSRV);
+    
+    Graphics->DeviceContext->PSSetShaderResources(3, 1, &SpotLightShadowMapSRV);
+
+    Graphics->DeviceContext->PSSetShaderResources(4, 1, &PointLightShadowMapSRV);
 }
 
 void FStaticMeshRenderPass::Render(const std::shared_ptr<FEditorViewportClient>& Viewport)
@@ -293,8 +313,10 @@ void FStaticMeshRenderPass::Render(const std::shared_ptr<FEditorViewportClient>&
     Graphics->DeviceContext->OMSetRenderTargets(1, &RenderTargetRHI->RTV, ViewportResource->GetDepthStencilView());
     ViewportResource->ClearRenderTarget(Graphics->DeviceContext, ResourceType);
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    
+    OnShaderReload();
     PrepareRenderState(Viewport);
+
+    PrepareShadowMap(Viewport);
 
     for (UStaticMeshComponent* Comp : StaticMeshComponents)
     {
@@ -334,3 +356,13 @@ void FStaticMeshRenderPass::ClearRenderArr()
     StaticMeshComponents.Empty();
 }
 
+void FStaticMeshRenderPass::OnShaderReload()
+{
+    // 공통 셰이더
+    DebugDepthShader = ShaderManager->GetPixelShaderByKey(L"StaticMeshPixelShaderDepth");
+    DebugWorldNormalShader = ShaderManager->GetPixelShaderByKey(L"StaticMeshPixelShaderWorldNormal");
+
+    // ViewModeIndex에 따라 선택적으로 다시 설정
+    // 현재 ViewModeIndex를 저장하고 있다면 그것 기준으로 ChangeViewMode 호출 가능
+    ChangeViewMode(EViewModeIndex::VMI_Lit_BlinnPhong); // 또는 현재 모드 기억해뒀다가 호출
+}

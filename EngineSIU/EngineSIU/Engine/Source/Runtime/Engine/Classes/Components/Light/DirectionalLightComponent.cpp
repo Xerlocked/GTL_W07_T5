@@ -7,7 +7,7 @@
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
 
-    DirectionalLightInfo.Direction = -GetUpVector();
+    DirectionalLightInfo.Direction = GetForwardVector();
     DirectionalLightInfo.Intensity = 10.0f;
 
     DirectionalLightInfo.LightColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -59,7 +59,7 @@ void UDirectionalLightComponent::SetProperties(const TMap<FString, FString>& InP
 FVector UDirectionalLightComponent::GetDirection()  
 {
     FRotator rotator = GetWorldRotation();
-    FVector WorldDown= rotator.ToQuaternion().RotateVector(-GetUpVector());
+    FVector WorldDown = rotator.ToQuaternion().RotateVector(GetForwardVector());
     return WorldDown;  
 }
 

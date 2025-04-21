@@ -34,16 +34,15 @@ public:
     void UpdateLitUnlitConstant(int32 isLit) const;
 
     void RenderPrimitive(OBJ::FStaticMeshRenderData* RenderData, TArray<FStaticMaterial*> Materials, TArray<UMaterial*> OverrideMaterials, int SelectedSubMeshIndex) const;
-    
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
-
-    void RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const;
+    void PrepareShadowMap(const std::shared_ptr<FEditorViewportClient>& Viewport);
 
     // Shader 관련 함수 (생성/해제 등)
     void CreateShader();
     void ReleaseShader();
 
     void ChangeViewMode(EViewModeIndex ViewModeIndex);
+
+    void OnShaderReload();
     
 private:
     TArray<UStaticMeshComponent*> StaticMeshComponents;
@@ -58,4 +57,7 @@ private:
     FDXDBufferManager* BufferManager;
     FGraphicsDevice* Graphics;
     FDXDShaderManager* ShaderManager;
+
+    //Shadow
+    ID3D11SamplerState* ShadowMapSampler;
 };

@@ -80,6 +80,13 @@ void FGizmoRenderPass::ReleaseShader()
 {
 }
 
+void FGizmoRenderPass::OnShaderReload()
+{
+    VertexShader = ShaderManager->GetVertexShaderByKey(L"StaticMeshVertexShader");
+    InputLayout = ShaderManager->GetInputLayoutByKey(L"StaticMeshVertexShader");
+    PixelShader = ShaderManager->GetPixelShaderByKey(L"GizmoPixelShader");
+}
+
 void FGizmoRenderPass::CreateBuffer()
 {
     BufferManager->CreateBufferGeneric<FViewportSize>("FViewportSize", nullptr, sizeof(FViewportSize), D3D11_BIND_CONSTANT_BUFFER, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
@@ -192,6 +199,7 @@ void FGizmoRenderPass::RenderGizmoComponent(UGizmoBaseComponent* GizmoComp, cons
         return;
     }
 
+    OnShaderReload();
     PrepareRenderState();
     
     // 오브젝트 버퍼 업데이트

@@ -39,7 +39,7 @@ public:
     virtual ~UObject() = default;
 
     virtual UObject* Duplicate(UObject* InOuter);
-
+    void SetFName(const FName& InName) { NamePrivate = InName; }
     UObject* GetOuter() const { return OuterPrivate; }
     virtual UWorld* GetWorld() const;
     virtual void Serialize(FArchive& Ar);

@@ -56,11 +56,15 @@ float4 mainPS(PS_INPUT_StaticMesh Input) : SV_Target
     // Lighting
     if (IsLit)
     {
+        FLightingResult CalculateColor = Lighting(Input.WorldPosition, WorldNormal, Input.WorldViewPosition);
 #ifdef LIGHTING_MODEL_GOURAUD
         FinalColor = float4(Input.Color.rgb * DiffuseColor, 1.0);
-#else
-        float3 LitColor = Lighting(Input.WorldPosition, WorldNormal, Input.WorldViewPosition, DiffuseColor).rgb;
+#elif LIGHTING_MODEL_BLINN_PHONG
+        float3 LitColor = (CalculateColor.DiffuseFactor * DiffuseColor) + (Material.SpecularColor * CalculateColor.SpecularFactor);
         FinalColor = float4(LitColor, 1);
+#else
+        float3 LitColor = Lighting(Input.WorldPosition, WorldNormal, Input.WorldViewPosition).DiffuseFactor;
+        FinalColor = float4(LitColor * DiffuseColor, 1);
 #endif
     }
     else
@@ -70,7 +74,7 @@ float4 mainPS(PS_INPUT_StaticMesh Input) : SV_Target
     
     if (bIsSelected)
     {
-        FinalColor += float4(0.01, 0.01, 0.0, 1);
+        FinalColor += float4(0.2, 0.2, 0.2, 1);
     }
     
     return FinalColor;

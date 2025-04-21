@@ -30,6 +30,8 @@ public:
     void CreateShader();
     void ReleaseShader();
 
+    void OnShaderReload();
+
     void PrepareRenderState();
 
     void UpdateFogConstant(UHeightFogComponent* Fog);

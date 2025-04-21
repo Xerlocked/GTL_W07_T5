@@ -35,6 +35,8 @@ public:
     void CreateShader();
     void ReleaseShader();
 
+    void OnShaderReload();
+
     void CreateBuffer();
     
 private:
