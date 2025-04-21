@@ -38,7 +38,7 @@ struct FPointLightInfo
     float   Falloff;
     float   Padding;  // 16바이트 정렬
 
-    FMatrix LightViewMatrix;
+    FMatrix LightViewMatrix[6];
     FMatrix LightProjectionMatrix;
 
     FVector LightPosition;

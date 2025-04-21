@@ -49,7 +49,7 @@ struct FPointLightInfo
     float Falloff;
     float Padding;
     
-    row_major matrix LightViewMatrix;
+    row_major matrix LightViewMatrix[6];
     row_major matrix LightProjectionMatrix;
 
     float3 PointLightPosition;
@@ -149,22 +149,42 @@ float CalculateSpecular(float3 WorldNormal, float3 ToLightDir, float3 ViewDir, f
     return Spec * SpecularStrength;
 }
 
+int GetMajorFaceIndex(float3 dir)
+{
+    float3 absDir = abs(dir);
+    int face = 0;
+    if (absDir.x > absDir.y && absDir.x > absDir.z)
+        face = dir.x > 0.0 ? 0 : 1;
+    else if (absDir.y > absDir.z)
+        face = dir.y > 0.0 ? 2 : 3;
+    else
+        face = dir.z > 0.0 ? 4 : 5;
+    return face;
+}
+
 float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos)
 {
-    float3 LightToFrag = WorldPos - LightInfo.Position;
-    float Distance = length(LightToFrag);
+    // 1) 광원→조각 방향 (큐브맵 샘플링 좌표)
+    float3 Dir = normalize(WorldPos - LightInfo.Position);
 
-    float3 SampleDir = normalize(LightToFrag);
+    // 2) 해당 face의 뷰·프로젝션 적용
+    int face = GetMajorFaceIndex(Dir);
+    float4 posVS = mul(float4(WorldPos,1), LightInfo.LightViewMatrix[face]);
+    float4 posCS = mul(posVS,          LightInfo.LightProjectionMatrix);
 
+    // 3) 클립스페이스 깊이
+    float refDepth = posCS.z / posCS.w;
 
-    float Bias = 0.01;
+    // 4) 바이어스
 
-    float ShadowDepth = Distance - Bias;
-    
-    float Shadow = PointShadowMap.SampleCmpLevelZero(ShadowMapSampler, SampleDir, ShadowDepth);
+    // 5) 하드웨어 비교 샘플
+    float shadow = PointShadowMap.SampleCmpLevelZero(ShadowMapSampler, Dir, refDepth);
 
-    return Shadow;
+    return shadow;
 }
+
+
+
 
 
 float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
