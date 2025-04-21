@@ -13,6 +13,8 @@
 
 Texture2D DirectionalShadowMap : register(t2);
 Texture2D SpotShadowMap : register(t3);
+TextureCube<float> PointShadowMap : register(t4); // ← float 필수!
+
 
 SamplerComparisonState ShadowMapSampler : register(s2);
 
@@ -44,8 +46,12 @@ struct FPointLightInfo
     float Falloff;
     float Padding;
     
-    row_major matrix LightViewMatrix;
+    row_major matrix LightViewMatrix[6];
     row_major matrix LightProjectionMatrix;
+
+    float3 PointLightPosition;
+    float FDirectionalLightInfoPadding1;
+
 };
 
 struct FSpotLightInfo
@@ -142,7 +148,45 @@ float CalculateSpecular(float3 WorldNormal, float3 ToLightDir, float3 ViewDir, f
     return Spec * SpecularStrength;
 }
 
-float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float WorldViewPosition, float3 DiffuseColor)
+int GetMajorFaceIndex(float3 dir)
+{
+    float3 absDir = abs(dir);
+    int face = 0;
+    if (absDir.x > absDir.y && absDir.x > absDir.z)
+        face = dir.x > 0.0 ? 0 : 1;
+    else if (absDir.y > absDir.z)
+        face = dir.y > 0.0 ? 2 : 3;
+    else
+        face = dir.z > 0.0 ? 4 : 5;
+    return face;
+}
+
+float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos)
+{
+    // 1) 광원→조각 방향 (큐브맵 샘플링 좌표)
+    float3 Dir = normalize(WorldPos - LightInfo.Position);
+
+    // 2) 해당 face의 뷰·프로젝션 적용
+    int face = GetMajorFaceIndex(Dir);
+    float4 posVS = mul(float4(WorldPos,1), LightInfo.LightViewMatrix[face]);
+    float4 posCS = mul(posVS,          LightInfo.LightProjectionMatrix);
+
+    // 3) 클립스페이스 깊이
+    float refDepth = posCS.z / posCS.w;
+
+    // 4) 바이어스
+
+    // 5) 하드웨어 비교 샘플
+    float shadow = PointShadowMap.SampleCmpLevelZero(ShadowMapSampler, Dir, refDepth);
+
+    return shadow;
+}
+
+
+
+
+
+float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)
 {
     FPointLightInfo LightInfo = PointLights[Index];
     
@@ -164,8 +208,8 @@ float4 PointLight(int Index, float3 WorldPosition, float3 WorldNormal, float Wor
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
     float3 Lit = ((DiffuseFactor * DiffuseColor) + (SpecularFactor * Material.SpecularColor)) * LightInfo.LightColor.rgb;
 #endif
-    
-    return float4(Lit * Attenuation * LightInfo.Intensity, 1.0);
+    float Shadow = PointShadowCalculation(LightInfo, WorldPosition);
+    return float4(Lit * Attenuation * LightInfo.Intensity * Shadow, 1.0);
 }
 
 float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)

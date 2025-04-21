@@ -25,6 +25,8 @@ public:
 
     // 라인 렌더링 전용 함수
     void CreateShader();
+    void OnShaderReload();
+
     void PrepareLineShader() const;
     void UpdateObjectConstant(const FMatrix& WorldMatrix, const FVector4& UUIDColor, bool bIsSelected) const;
     void ProcessLineRendering(const std::shared_ptr<FEditorViewportClient>& Viewport);
