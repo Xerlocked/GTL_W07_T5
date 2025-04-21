@@ -30,9 +30,6 @@ struct FDirectionalLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
-
-    float3 DirectionalLightPosition;
-    float FDirectionalLightInfoPadding1;
 };
 
 struct FPointLightInfo
@@ -49,9 +46,6 @@ struct FPointLightInfo
     
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
-
-    float3 DirectionalLightPosition;
-    float FDirectionalLightInfoPadding1;
 };
 
 struct FSpotLightInfo
@@ -71,9 +65,6 @@ struct FSpotLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
-
-    float3 DirectionalLightPosition;
-    float FDirectionalLightInfoPadding1;
 };
 
 cbuffer Lighting : register(b0)
@@ -87,6 +78,10 @@ cbuffer Lighting : register(b0)
     int PointLightsCount;
     int SpotLightsCount;
     int AmbientLightsCount;
+
+    float ShadowMapWidth;
+    float ShadowMapHeight;
+    float2 ShadowMapPadding;
 };
 
 float2 NDCToUV(float3 NDC)
@@ -213,6 +208,11 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
 
 
 
+bool InRange(float val, float min, float max)
+{
+    return (min <= val && val <= max);
+}
+
 float ShadowCalculation(int nIndex, float3 WorldPos)
 {
     FDirectionalLightInfo LightInfo = Directional[nIndex];
@@ -221,13 +221,34 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     float4 LightClipPos = mul(LightView, LightInfo.LightProjectionMatrix);
     float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
-    float LightDistance = ShadowMapNDC.z;
+    float LightDistance = ShadowMapNDC.z;  
+  
+    // float Bias = 0.0005;
+    // LightDistance -= Bias;
 
-    float Bias = 0.001;
-    LightDistance -= Bias;
-    
-    float ShadowMapDepth = DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, ShadowMapUV, LightDistance).r;
-    return ShadowMapDepth;
+    float Shadow = 0.f;
+    float OffsetX = 1.f/ShadowMapWidth;
+    float OffsetY = 1.f/ShadowMapHeight;
+    for (int i=-1;i<=1;i++)
+    {
+        for (int j=-1;j<=1;j++)
+        {
+            float2 SampleUV = {
+                ShadowMapUV.x + OffsetX * i,
+                ShadowMapUV.y + OffsetY * j
+            };
+            if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
+            {
+                Shadow += DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, SampleUV, LightDistance).r;
+            }else
+            {
+                Shadow += 1.f;
+            }
+        }
+    }
+    Shadow /= 9;
+
+    return Shadow;
 }
 
 float4 DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldNormal, float3 WorldViewPosition, float3 DiffuseColor)

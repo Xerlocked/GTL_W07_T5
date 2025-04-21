@@ -41,13 +41,12 @@ void FUpdateLightBufferPass::Initialize(FDXDBufferManager* InBufferManager, FGra
     ShaderManager = InShaderManager;
 
     // viewport for shadow map
-    ShadowViewport.Width = 1024;
-    ShadowViewport.Height = 1024;
+    ShadowViewport.Width = FViewportResource::ShadowMapWidth; //1024;
+    ShadowViewport.Height = FViewportResource::ShadowMapHeight; //1024
     ShadowViewport.MinDepth = 0.0f;
     ShadowViewport.MaxDepth = 1.0f;
     ShadowViewport.TopLeftX = 0;
     ShadowViewport.TopLeftY = 0;
-
     
     CreateShader();
 }
@@ -56,7 +55,7 @@ void FUpdateLightBufferPass::PrepareRenderState()
 {
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Graphics->DeviceContext->IASetInputLayout(InputLayout);
-    Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapFront);
+    Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapBack);
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(nullptr, nullptr, 0); // 픽셀 쉐이더는 필요없음.
     Graphics->DeviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
@@ -184,66 +183,59 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
         }
     }
     
-    Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);
-    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+     for (auto Light : DirectionalLights)
+     {
+         if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
+         {
+             //Light기준 Camera Update
+             FVector LightDir = Light->GetDirection().GetSafeNormal();
+             FVector LightPos = -LightDir * (Viewport->FarClip/2);
+             FVector TargetPos = LightPos + LightDir;
+             // FVector TargetPos = FVector::ZeroVector;
+             FCameraConstantBuffer LightViewCameraConstant;
+             
+             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
+
+             Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
+             
+             Light->LightCameraPos = LightPos;
+             
+             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
+                 100,
+                 100,
+                 Viewport->NearClip,
+                 Viewport->FarClip
+             );
+
+             Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
+             
+             BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
     
-     //
-     // Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-     // Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
-     //
-     // for (auto Light : DirectionalLights)
-     // {
-     //     if (DirectionalLightsCount < MAX_DIRECTIONAL_LIGHT)
-     //     {
-     //         //Light기준 Camera Update
-     //         // FVector LightDir = Light->GetDirection().GetSafeNormal();
-     //         FVector LightDir = Light->GetDirection().GetSafeNormal();
-     //         FVector LightPos = -LightDir * (Viewport->FarClip/2);
-     //         FVector TargetPos = LightPos + LightDir;
-     //         // FVector TargetPos = FVector::ZeroVector;
-     //         
-     //         FCameraConstantBuffer LightViewCameraConstant;
-     //         LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
-     //
-     //         Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
-     //         
-     //         // 오쏘그래픽 너비는 줌 값과 가로세로 비율에 따라 결정됩니다.
-     //         float OrthoWidth = Viewport->OrthoSize * Viewport->AspectRatio;
-     //         float OrthoHeight = Viewport->OrthoSize;
-     //         LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
-     //             OrthoWidth,
-     //             OrthoHeight,
-     //             Viewport->NearClip,
-     //             Viewport->FarClip
-     //         );
-     //
-     //         Light->ProjectionMatrix = LightViewCameraConstant.ProjectionMatrix;
-     //         
-     //         BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCameraConstant);
-     //
-     //         for (UStaticMeshComponent* Comp : StaticMeshComponents)
-     //         {
-     //             if (!Comp || !Comp->GetStaticMesh())
-     //             {
-     //                 continue;
-     //             }
-     //
-     //             OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
-     //             if (RenderData == nullptr)
-     //             {
-     //                 continue;
-     //             }
-     //             
-     //             FMatrix WorldMatrix = Comp->GetWorldMatrix();
-     //             
-     //             UpdateObjectConstant(WorldMatrix);
-     //             
-     //             RenderPrimitive(RenderData);
-     //         }
-     //
-     //         DirectionalLightsCount++;
-     //     }
-     // }
+             for (UStaticMeshComponent* Comp : StaticMeshComponents)
+             {
+                 if (!Comp || !Comp->GetStaticMesh())
+                 {
+                     continue;
+                 }
+    
+                 OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
+                 if (RenderData == nullptr)
+                 {
+                     continue;
+                 }
+                 
+                 FMatrix WorldMatrix = Comp->GetWorldMatrix();
+                 
+                 UpdateObjectConstant(WorldMatrix);
+                 
+                 RenderPrimitive(RenderData);
+             }
+    
+             DirectionalLightsCount++;
+         }
+     }
+     Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);
+     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
 void FUpdateLightBufferPass::UpdateLightBuffer() const
@@ -264,7 +256,6 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
-            LightBufferData.SpotLights[SpotLightsCount].LightPosition = Light->LightCameraPos;
             SpotLightsCount++;
         }
     }
@@ -277,7 +268,6 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.PointLights[PointLightsCount].Position = Light->GetWorldLocation();
             LightBufferData.PointLights[PointLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
-            LightBufferData.PointLights[PointLightsCount].LightPosition = Light->LightCameraPos;
             PointLightsCount++;
         }
     }
@@ -290,7 +280,6 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.Directional[DirectionalLightsCount].Direction = Light->GetDirection();
             LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix;
             LightBufferData.Directional[DirectionalLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
-            LightBufferData.Directional[DirectionalLightsCount].LightPosition = Light->LightCameraPos;
             DirectionalLightsCount++;
         }
     }
@@ -309,6 +298,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
     LightBufferData.PointLightsCount = PointLightsCount;
     LightBufferData.SpotLightsCount = SpotLightsCount;
     LightBufferData.AmbientLightsCount = AmbientLightsCount;
+    LightBufferData.ShadowMapWidth = FViewportResource::ShadowMapWidth;
+    LightBufferData.ShadowMapHeight = FViewportResource::ShadowMapHeight;
 
     BufferManager->UpdateConstantBuffer(TEXT("FLightInfoBuffer"), LightBufferData);
     
