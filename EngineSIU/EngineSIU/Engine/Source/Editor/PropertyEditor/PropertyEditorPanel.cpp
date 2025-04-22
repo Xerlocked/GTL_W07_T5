@@ -159,6 +159,7 @@ void PropertyEditorPanel::Render()
 
             if (ImGui::TreeNodeEx("PointLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
+                static int LightFaceNumber = 0;
                 DrawColorProperty("Light Color",
                     [&]() { return pointlightObj->GetLightColor(); },
                     [&](FLinearColor c) { pointlightObj->SetLightColor(c); });
@@ -187,14 +188,21 @@ void PropertyEditorPanel::Render()
                     ImGui::Text("Face %d", i);
                     ID3D11ShaderResourceView* SRV = ViewportResource->GetPointShadowMapFaceSRV(i);
                     ImTextureID TexID = reinterpret_cast<ImTextureID>(SRV);
-                    ImGui::Image(TexID, ImVec2(96, 96));
+                    if (ImGui::ImageButton("PointTexture##" + i, TexID, ImVec2(96, 96)))
+                    {
+                        LightFaceNumber = i;
+                    }
                     ImGui::NextColumn();
                 }
                 ImGui::Columns(1);
 
-
-
-
+                FString ShowLightText = "Show Face " + std::to_string(LightFaceNumber) + " light's perspective";  
+                
+                if (ImGui::Button(GetData(ShowLightText)))
+                {
+                    
+                }
+                
                 ImGui::TreePop();
             }
 
@@ -208,6 +216,8 @@ void PropertyEditorPanel::Render()
 
             if (ImGui::TreeNodeEx("SpotLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
+                ImVec2 ParentSize = ImGui::GetItemRectSize();
+                
                 DrawColorProperty("Light Color",
                     [&]() { return spotlightObj->GetLightColor(); },
                     [&](FLinearColor c) { spotlightObj->SetLightColor(c); });
@@ -242,8 +252,17 @@ void PropertyEditorPanel::Render()
                 ID3D11ShaderResourceView* SpotSRV = ViewportResource->GetSpotShadowMapSRV(); 
 
                 ImTextureID SRVID = reinterpret_cast<ImTextureID>(SpotSRV);
-                
-                ImGui::Image(SRVID, ImVec2(200, 200));
+
+                ImGui::Image(SRVID, ImVec2(ParentSize.x - 154, ParentSize.x - 154));
+
+                if (ImGui::Button("Show the light's perspective"))
+                {
+                    const FVector SpotDirection = spotlightObj->GetDirection();
+                    const FVector SpotLocation = spotlightObj->GetWorldLocation() + SpotDirection * 1.5f;
+                    
+                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraLocation(SpotLocation);
+                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->CameraLookAt(SpotDirection);
+                }
                 
                 ImGui::TreePop();
             }
@@ -258,12 +277,14 @@ void PropertyEditorPanel::Render()
 
             if (ImGui::TreeNodeEx("DirectionalLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
+                ImVec2 ParentSize = ImGui::GetItemRectSize();
+                
                 DrawColorProperty("Light Color",
                     [&]() { return dirlightObj->GetLightColor(); },
                     [&](FLinearColor c) { dirlightObj->SetLightColor(c); });
 
                 float Intensity = dirlightObj->GetIntensity();
-                if (ImGui::SliderFloat("Intensity", &Intensity, 0.0f, 150.0f, "%.3f"))
+                if (ImGui::DragFloat("Intensity", &Intensity,0.03f, 0.0f, 150.0f, "%.3f"))
                     dirlightObj->SetIntensity(Intensity);
 
                 LightDirection = dirlightObj->GetDirection();
@@ -273,7 +294,13 @@ void PropertyEditorPanel::Render()
 
                 ImTextureID SRVID = reinterpret_cast<ImTextureID>(DirectionalSRV);
                 
-                ImGui::Image(SRVID, ImVec2(200, 200));
+                ImGui::Image(SRVID, ImVec2(ParentSize.x - 154, ParentSize.x - 154));
+
+
+                if (ImGui::Button("Show the light's perspective"))
+                {
+                    
+                }
                 
                 ImGui::TreePop();
             }

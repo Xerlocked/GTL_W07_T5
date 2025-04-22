@@ -396,6 +396,23 @@ void FEditorViewportClient::CameraRotatePitch(float InValue)
     PerspectiveCamera.SetRotation(CurCameraRot);
 }
 
+void FEditorViewportClient::CameraLookAt(const FVector& InDirection)
+{
+    // DirectionVector이 이미 단위 벡터라고 가정
+    FVector Dir = InDirection.GetSafeNormal();
+
+    float PitchAngle = FMath::RadiansToDegrees(
+        FMath::Atan2(-Dir.Z, FMath::Sqrt(Dir.X * Dir.X + Dir.Y * Dir.Y))
+    );
+    float YawAngle = FMath::RadiansToDegrees(
+        FMath::Atan2(Dir.Y, Dir.X)
+    );
+    const float RollAngle = 0.0f;
+    
+    FVector NewCameraRot = FVector(PerspectiveCamera.GetRotation().X, PitchAngle, YawAngle);
+    PerspectiveCamera.SetRotation(NewCameraRot);
+}
+
 void FEditorViewportClient::PivotMoveRight(float InValue)
 {
     Pivot = Pivot + OrthogonalCamera.GetRightVector() * InValue * -0.05f;
@@ -549,6 +566,11 @@ void FEditorViewportClient::SetOthoSize(float InValue)
 {
     OrthoSize += InValue;
     OrthoSize = FMath::Max(OrthoSize, 0.1f);
+}
+
+void FEditorViewportClient::SetCameraLocation(const FVector& InLocation)
+{
+    PerspectiveCamera.SetLocation(InLocation);
 }
 
 void FEditorViewportClient::LoadConfig(const TMap<FString, FString>& config)
