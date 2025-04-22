@@ -12,7 +12,7 @@ void UImGuiManager::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Init(hWnd);
     ImGui_ImplDX11_Init(device, deviceContext);
-    io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\malgun.ttf)", 24.0f, nullptr, io.Fonts->GetGlyphRangesKorean());
+    io.Fonts->AddFontFromFileTTF(R"(Font/Roboto-Regular.ttf)", 18.0f, nullptr, io.Fonts->GetGlyphRangesKorean());
 
     ImFontConfig FeatherFontConfig;
     FeatherFontConfig.PixelSnapH = true;
