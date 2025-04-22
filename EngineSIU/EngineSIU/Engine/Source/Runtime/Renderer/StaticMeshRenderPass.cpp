@@ -145,28 +145,25 @@ void FStaticMeshRenderPass::Initialize(FDXDBufferManager* InBufferManager, FGrap
 
     CreateShader();
 
-    D3D11_SAMPLER_DESC comparisonSamplerDesc;
-    ZeroMemory(&comparisonSamplerDesc, sizeof(D3D11_SAMPLER_DESC));
-    comparisonSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-    comparisonSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-    comparisonSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-    comparisonSamplerDesc.BorderColor[0] = 1.0f;
-    comparisonSamplerDesc.BorderColor[1] = 1.0f;
-    comparisonSamplerDesc.BorderColor[2] = 1.0f;
-    comparisonSamplerDesc.BorderColor[3] = 1.0f;
-    comparisonSamplerDesc.MinLOD = 0.f;
-    comparisonSamplerDesc.MaxLOD = 0.f;
-    comparisonSamplerDesc.MipLODBias = 0.f;
-    comparisonSamplerDesc.MaxAnisotropy = 0;
+    D3D11_SAMPLER_DESC ShadowMapSamplerDesc;
+    ZeroMemory(&ShadowMapSamplerDesc, sizeof(D3D11_SAMPLER_DESC));
+    ShadowMapSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    ShadowMapSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    ShadowMapSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    ShadowMapSamplerDesc.BorderColor[0] = 0.0f;
+    ShadowMapSamplerDesc.MinLOD = 0.f;
+    ShadowMapSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX; // 밉맵/블러 효과를 내고 싶다면 MaxLOD를 D3D11_FLOAT32_MAX로!
+    ShadowMapSamplerDesc.MipLODBias = 0.f;
+    ShadowMapSamplerDesc.MaxAnisotropy = 1; //0은 무효, 1 이상(보통 1~16)로 설정 권장 (Linear 필터에서는 큰 영향 없음)
 
-    comparisonSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-    comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    ShadowMapSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    ShadowMapSamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
     // Comparison
     // comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
     // comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
 
-    Graphics->Device->CreateSamplerState(&comparisonSamplerDesc, &ShadowMapSampler);
+    Graphics->Device->CreateSamplerState(&ShadowMapSamplerDesc, &ShadowMapSampler);
 }
 
 void FStaticMeshRenderPass::PrepareRender()

@@ -287,7 +287,7 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     //         };
     //         if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
     //         {
-    //             Shadow += DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, SampleUV, LightDistance).r;
+    //             Shadow += DirectionalShadowMap.SampleLevel(ShadowMapSampler, SampleUV, 0).r;
     //         }else
     //         {
     //             Shadow += 1.f;
@@ -299,19 +299,19 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     ///////////////////////////////////////////////////////////////
     /// VSM
     ///  // One-tailed inequality valid if t > Moments.x
-    float2 moments = DirectionalShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 0).rg;
+    float2 moments = DirectionalShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 2).rg;
     float mean = moments.x; //mean depth 평균
     float mean2 = moments.y; //mean2 detph^2 평균
-
+    
     float p = (LightDistance <= mean);
     // Compute variance.
     float Variance = max(mean2 - (mean * mean), 0.00001);
-
+    
     // Compute probabilistic upper bound.
     float d = LightDistance - mean;
     float p_max = Variance / (Variance + d * d);
-
     Shadow = max(p, p_max);
+    
     return Shadow;
 }
 

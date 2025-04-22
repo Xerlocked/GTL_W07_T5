@@ -201,7 +201,6 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             FVector LightDir = Light->GetDirection().GetSafeNormal();
             FVector LightPos = -LightDir * (Viewport->FarClip / 2);
             FVector TargetPos = LightPos + LightDir;
-            // FVector TargetPos = FVector::ZeroVector;
             FCameraConstantBuffer LightViewCameraConstant;
 
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
@@ -209,8 +208,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
 
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
-                100,
-                100,
+                300,
+                300,
                 Viewport->NearClip,
                 Viewport->FarClip
             );
@@ -242,6 +241,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             DirectionalLightsCount++;
         }
     }
+
+    Graphics->DeviceContext->GenerateMips(ViewportResource->GetDirectionalShadowMapSRV());
     
     // 0:+X, 1:-X, 2:+Y, 3:-Y, 4:+Z, 5:-Z 순서로 Face 지정
     static const FVector LookDirections[6] = {

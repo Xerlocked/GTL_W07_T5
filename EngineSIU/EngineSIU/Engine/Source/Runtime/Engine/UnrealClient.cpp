@@ -207,6 +207,8 @@ HRESULT FViewportResource::CreateShadowMapResources()
     ShadowMapTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
     ShadowMapTextureDesc.Height = (UINT)ShadowMapHeight;
     ShadowMapTextureDesc.Width = (UINT)ShadowMapWidth;
+    ShadowMapTextureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+    
     HRESULT hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDesc, nullptr, &DirectionalShadowMapTexture);
     if (FAILED(hr))
     {
