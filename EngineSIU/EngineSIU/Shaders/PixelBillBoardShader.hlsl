@@ -16,18 +16,18 @@ struct PS_Input
 
 float4 main(PS_Input input) : SV_TARGET
 {
-    float4 FinalColor = float4(0.f, 0.f, 0.f, 1.f);
-    
-    float2 UV = input.UV * uvScale + uvOffset;
+    // UV 계산
+    float2 UV    = input.UV * uvScale + uvOffset;
+    // 텍스처 샘플링 (RGBA)
     float4 Color = Texture.Sample(Sampler, UV);
-    float threshold = 0.1f;
 
-    if (max(max(Color.r, Color.g), Color.b) < threshold)
-    {
-        discard;
-    }
-    
-    FinalColor = Color;
-    
-    return FinalColor;
+    // 알파가 아주 작으면(=사실상 0 이면) 픽셀을 버린다
+    // - clip(x) 은 x < 0 일 때 픽셀을 드롭
+    // - thresholdAlpha 을 0.001 정도로 잡으면, 완전 투명(=0)만 잘라내고
+    //   0~0.001 사이의 반투명 픽셀은 유지할 수 있다.
+    float thresholdAlpha = 0.001f;
+    clip(Color.a - thresholdAlpha);
+
+    // 살아남은 픽셀만 리턴
+    return Color;
 }
