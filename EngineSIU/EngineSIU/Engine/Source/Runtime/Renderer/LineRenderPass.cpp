@@ -57,6 +57,11 @@ void FLineRenderPass::CreateShader()
     PixelLineShader = ShaderManager->GetPixelShaderByKey(L"PixelLineShader");
 }
 
+void FLineRenderPass::OnShaderReload()
+{
+    VertexLineShader = ShaderManager->GetVertexShaderByKey(L"VertexLineShader");
+    PixelLineShader = ShaderManager->GetPixelShaderByKey(L"PixelLineShader");
+}
 void FLineRenderPass::PrepareLineShader() const
 {
     Graphics->DeviceContext->VSSetShader(VertexLineShader, nullptr, 0);
@@ -95,6 +100,7 @@ void FLineRenderPass::UpdateObjectConstant(const FMatrix& WorldMatrix, const FVe
 
 void FLineRenderPass::ProcessLineRendering(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
+    OnShaderReload();
     PrepareLineShader();
 
     // 상수 버퍼 업데이트: Identity 모델, 기본 색상 등

@@ -26,6 +26,7 @@ public:
     virtual void PrepareRender() override;
     virtual void Render(const std::shared_ptr<FEditorViewportClient>& Viewport) override;
     virtual void ClearRenderArr() override;
+    void OnShaderReload();
     void UpdateLightBuffer() const;
 
     void BakeShadowMap(const std::shared_ptr<FEditorViewportClient>& Viewport);

@@ -146,7 +146,7 @@ void FRenderer::CreateCommonShader()
         return;
     }
 
-    hr = ShaderManager->AddVertexShaderAndInputLayout(L"ShaderMapVertexShader", L"Shaders/ShaderMapVertexShader.hlsl", "mainVS", ShaderManager->StaticMeshLayoutDesc, ARRAYSIZE(ShaderManager->StaticMeshLayoutDesc));
+    hr = ShaderManager->AddVertexShaderAndInputLayout(L"ShaderMapVertexShader", L"Shaders/ShadowMapVertexShader.hlsl", "mainVS", ShaderManager->StaticMeshLayoutDesc, ARRAYSIZE(ShaderManager->StaticMeshLayoutDesc));
     if (FAILED(hr))
     {
         return;
@@ -342,4 +342,11 @@ void FRenderer::RenderEditorOverlay(const std::shared_ptr<FEditorViewportClient>
 void FRenderer::RenderViewport(const std::shared_ptr<FEditorViewportClient>& Viewport)
 {
     SlateRenderPass->Render(Viewport);
+}
+void FRenderer::UpdateAllShader() {
+    WorldBillboardRenderPass->OnShaderReload();
+    EditorBillboardRenderPass->OnShaderReload();
+    GizmoRenderPass->OnShaderReload();
+    LineRenderPass->OnShaderReload();
+    FogRenderPass->OnShaderReload();
 }

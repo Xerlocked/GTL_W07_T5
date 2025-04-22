@@ -47,6 +47,7 @@ public:
 
     void CreateShader();
     void ReleaseShader();
+    void OnShaderReload();
 
 protected:
     TArray<UBillboardComponent*> BillboardComps;
