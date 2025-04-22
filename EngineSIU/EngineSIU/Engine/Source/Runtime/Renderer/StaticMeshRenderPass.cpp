@@ -158,9 +158,14 @@ void FStaticMeshRenderPass::Initialize(FDXDBufferManager* InBufferManager, FGrap
     comparisonSamplerDesc.MaxLOD = 0.f;
     comparisonSamplerDesc.MipLODBias = 0.f;
     comparisonSamplerDesc.MaxAnisotropy = 0;
-    comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-    comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-    
+
+    comparisonSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+    comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+    // Comparison
+    // comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    // comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+
     Graphics->Device->CreateSamplerState(&comparisonSamplerDesc, &ShadowMapSampler);
 }
 

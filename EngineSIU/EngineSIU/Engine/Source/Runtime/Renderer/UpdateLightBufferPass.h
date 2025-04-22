@@ -44,6 +44,7 @@ private:
     D3D11_VIEWPORT ShadowViewport;
     
     ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader* PixelShader;
     ID3D11InputLayout* InputLayout;
 
     FDXDBufferManager* BufferManager;

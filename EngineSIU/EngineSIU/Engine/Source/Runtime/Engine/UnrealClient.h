@@ -72,11 +72,11 @@ public:
     ID3D11ShaderResourceView*& GetDepthStencilSRV() { return DepthStencilSRV; }
 
     ID3D11Texture2D*& GetDirectionalShadowMapTexture(){ return DirectionalShadowMapTexture; }
-    ID3D11DepthStencilView*& GetDirectionalShadowMapDSV() { return DirectionalShadowMapDSV; }
+    ID3D11RenderTargetView*& GetDirectionalShadowMapRTV() { return DirectionalShadowMapRTV; }
     ID3D11ShaderResourceView*& GetDirectionalShadowMapSRV() { return DirectionalShadowMapSRV; }
 
     ID3D11Texture2D*& GetSpotShadowMapTexture(){ return SpotShadowMapTexture; }
-    ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
+    ID3D11RenderTargetView*& GetSpotShadowMapRTV() { return SpotShadowMapRTV; }
     ID3D11ShaderResourceView*& GetSpotShadowMapSRV() { return SpotShadowMapSRV; }
 
     ID3D11Texture2D*& GetGizmoDepthStencilTexture() { return GizmoDepthStencilTexture; }
@@ -96,7 +96,8 @@ public:
     void ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type);
 
     std::array<float, 4> GetClearColor(EResourceType Type) const;
-    
+    HRESULT CreateShadowMapResources();
+
     // inline static int ShadowMapWidth = 1024;
     // inline static int ShadowMapHeight = 1024;
     inline static int ShadowMapWidth = 4096;
@@ -111,11 +112,11 @@ private:
     ID3D11ShaderResourceView* DepthStencilSRV = nullptr;
 
     ID3D11Texture2D* DirectionalShadowMapTexture = nullptr;
-    ID3D11DepthStencilView* DirectionalShadowMapDSV = nullptr;
+    ID3D11RenderTargetView* DirectionalShadowMapRTV = nullptr;
     ID3D11ShaderResourceView* DirectionalShadowMapSRV = nullptr;
 
     ID3D11Texture2D* SpotShadowMapTexture = nullptr;
-    ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
+    ID3D11RenderTargetView* SpotShadowMapRTV = nullptr;
     ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
     
     ID3D11Texture2D* GizmoDepthStencilTexture = nullptr;
@@ -124,6 +125,7 @@ private:
     TMap<EResourceType, FRenderTargetRHI> RenderTargets;
 
     HRESULT CreateDepthStencilResources();
+    void ReleaseShadowMapResources();
 
     void ReleaseDepthStencilResources();
     void ReleaseResources();

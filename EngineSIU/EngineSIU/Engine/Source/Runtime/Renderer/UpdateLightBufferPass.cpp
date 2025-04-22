@@ -57,7 +57,7 @@ void FUpdateLightBufferPass::PrepareRenderState()
     Graphics->DeviceContext->IASetInputLayout(InputLayout);
     Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapBack);
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(nullptr, nullptr, 0); // 픽셀 쉐이더는 필요없음.
+    Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
     Graphics->DeviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     BufferManager->BindConstantBuffer(TEXT("FObjectConstantBuffer"), 0, EShaderStage::Vertex);
@@ -130,9 +130,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
 
-
-    Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), nullptr);
 
     for (auto Light : SpotLights)
     {
@@ -183,8 +181,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
         }
     }
 
-    Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), nullptr);
 
     for (auto Light : DirectionalLights)
     {
@@ -199,9 +196,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
 
-            Light->ViewMatrix = LightViewCameraConstant.ViewMatrix;
-
-            Light->LightCameraPos = LightPos;
+            Light->ViewMatrix = LightViewCameraConstant.ViewMatrix; 
 
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
                 100,
@@ -317,7 +312,14 @@ void FUpdateLightBufferPass::CreateShader()
         return;
     }
 
+    hr = ShaderManager->AddPixelShader(L"ShadowMapPixelShader", L"Shaders/ShadowMapPixelShader.hlsl", "mainPS");
+    if (FAILED(hr))
+    {
+        return;
+    }
+
     VertexShader = ShaderManager->GetVertexShaderByKey(L"ShadowMapVertexShader");
+    PixelShader = ShaderManager->GetPixelShaderByKey(L"ShadowMapPixelShader");
     InputLayout = ShaderManager->GetInputLayoutByKey(L"StaticMeshVertexShader");
 }
 

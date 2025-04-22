@@ -14,7 +14,7 @@
 Texture2D DirectionalShadowMap : register(t2);
 Texture2D SpotShadowMap : register(t3);
 
-SamplerComparisonState ShadowMapSampler : register(s2);
+SamplerState ShadowMapSampler : register(s2);
 
 struct FAmbientLightInfo
 {
@@ -196,10 +196,10 @@ float4 SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, float3 Wor
     float2 LightUV = NDCToUV(ShadowMapNDC);
     float Depth = LightPos.z / LightPos.w;
     float Shadow = 1.0f;
-    if (all(LightUV >= 0.0f && LightUV <= 1.0f))
-    {
-        Shadow = SpotShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth);
-    }
+    // float2 moments = DirectionalShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 0).rg;
+
+    // Shadow = SpotShadowMap.SampleCmpLevelZero(ShadowMapSampler, LightUV, Depth);
+    Shadow = SpotShadowMap.SampleLevel(ShadowMapSampler, LightUV, 0).r;
     
     return float4(Lit * Attenuation * ConeAttenuation * LightInfo.Intensity * Shadow, 1.0);
 }
@@ -222,32 +222,48 @@ float ShadowCalculation(int nIndex, float3 WorldPos)
     float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
     float LightDistance = ShadowMapNDC.z;  
-  
-    // float Bias = 0.0005;
-    // LightDistance -= Bias;
 
     float Shadow = 0.f;
-    float OffsetX = 1.f/ShadowMapWidth;
-    float OffsetY = 1.f/ShadowMapHeight;
-    for (int i=-1;i<=1;i++)
-    {
-        for (int j=-1;j<=1;j++)
-        {
-            float2 SampleUV = {
-                ShadowMapUV.x + OffsetX * i,
-                ShadowMapUV.y + OffsetY * j
-            };
-            if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
-            {
-                Shadow += DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, SampleUV, LightDistance).r;
-            }else
-            {
-                Shadow += 1.f;
-            }
-        }
-    }
-    Shadow /= 9;
 
+    ///////////////////////////////////////////////////////////////
+    /// PCF
+    // float OffsetX = 1.f/ShadowMapWidth;
+    // float OffsetY = 1.f/ShadowMapHeight;
+    // for (int i=-1;i<=1;i++)
+    // {
+    //     for (int j=-1;j<=1;j++)
+    //     {
+    //         float2 SampleUV = {
+    //             ShadowMapUV.x + OffsetX * i,
+    //             ShadowMapUV.y + OffsetY * j
+    //         };
+    //         if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
+    //         {
+    //             Shadow += DirectionalShadowMap.SampleCmpLevelZero(ShadowMapSampler, SampleUV, LightDistance).r;
+    //         }else
+    //         {
+    //             Shadow += 1.f;
+    //         }
+    //     }
+    // }
+    // Shadow /= 9;
+
+    ///////////////////////////////////////////////////////////////
+    /// VSM
+    ///  // One-tailed inequality valid if t > Moments.x
+    float2 moments = DirectionalShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 0).rg;
+    float mean = moments.x; //mean depth 평균
+    float mean2 = moments.y; //mean2 detph^2 평균
+
+    float p = (LightDistance <= mean);
+    // Compute variance.
+    float Variance = max(mean2 - (mean * mean), 0.00001);
+
+    // Compute probabilistic upper bound.
+    float d = LightDistance - mean;
+    float p_max = Variance / (Variance + d * d);
+
+    Shadow = max(p, p_max);
     return Shadow;
 }
 
