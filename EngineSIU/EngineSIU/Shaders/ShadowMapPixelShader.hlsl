@@ -7,9 +7,7 @@ float4 mainPS(PS_INPUT Input) : SV_Target
 {
     float4 Output;
 
-    float3 NDC = Input.Position.xyz / Input.Position.w;
-
-    float Depth = NDC.z;
+    float Depth = Input.Position.z;
     
     Output.r = Depth;
     Output.g = Depth * Depth;

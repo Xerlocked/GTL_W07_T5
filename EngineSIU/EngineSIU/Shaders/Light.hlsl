@@ -285,8 +285,8 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
     float3 SpotShadowMapNDC = SpotLightClipPos.xyz / SpotLightClipPos.w;
     float2 SpotShadowMapUV = NDCToUV(SpotShadowMapNDC);
 
-    float SpotLightDistance = (SpotLightView.z * -1.0f) / SpotLightInfo.AttenuationRadius;
-    // float SpotLightDistance = SpotShadowMapNDC.z;
+    //float SpotLightDistance = (SpotLightView.z * -1.0f) / SpotLightInfo.AttenuationRadius;
+     float SpotLightDistance = SpotShadowMapNDC.z;
     
     float SpotLightShadow = CalculateShadow(SpotShadowMap, SpotShadowMapUV, SpotLightDistance);
 
