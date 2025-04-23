@@ -129,8 +129,8 @@ void FGraphicsDevice::CreateRasterizerState()
 
     RasterizerDesc.FrontCounterClockwise = FALSE;
     RasterizerDesc.DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
-    RasterizerDesc.DepthBias = 3.0f;
-    RasterizerDesc.SlopeScaledDepthBias = 3.0f;
+    RasterizerDesc.DepthBias = 1.0f;
+    RasterizerDesc.SlopeScaledDepthBias = 1.0f;
     RasterizerDesc.DepthClipEnable = TRUE;
     RasterizerDesc.ScissorEnable = FALSE;
     RasterizerDesc.MultisampleEnable = FALSE;

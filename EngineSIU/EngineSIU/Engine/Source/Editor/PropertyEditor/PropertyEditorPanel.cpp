@@ -211,7 +211,7 @@ void PropertyEditorPanel::Render()
                     for (int i = 0; i < 6; ++i)
                     {
                         ImGui::Text("Face %d", i);
-                        ID3D11ShaderResourceView* SRV = ViewportResource->GetPointShadowMapFaceSRV(i);
+                        ID3D11ShaderResourceView* SRV = ViewportResource->GetPointShadowMapFaceSRV(pointlightObj->index *6 + i);
                         ImTextureID TexID = reinterpret_cast<ImTextureID>(SRV);
                         if (ImGui::ImageButton("PointTexture##" + i, TexID, ImVec2(96, 96)))
                         {
