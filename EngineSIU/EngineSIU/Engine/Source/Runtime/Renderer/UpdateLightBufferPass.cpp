@@ -136,6 +136,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
     int DirectionalLightsCount = 0;
     int SpotLightCount = 0;
+    float TextureSize = 4096.0f;
 
     OnShaderReload();
     PrepareRenderState();
@@ -143,12 +144,21 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     UINT OriginalViewportCount = 1;
     D3D11_VIEWPORT OriginalViewport = {};
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
-    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-
     Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), ViewportResource->GetSpotShadowMapDSV());
+    int TileSize = 1024;
+    int NumTilesPerRow = 4;
 
     for (auto Light : SpotLights)
     {
+        int x = SpotLightCount % NumTilesPerRow;
+        int y = SpotLightCount / NumTilesPerRow;
+
+        ShadowViewport.TopLeftX = x * TileSize;
+        ShadowViewport.TopLeftY = y * TileSize;
+        ShadowViewport.Width = TileSize;
+        ShadowViewport.Height = TileSize;
+
+        Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
         if (SpotLightCount < MAX_SPOT_LIGHT)
         {
             //Light 기준 Camera Update
@@ -160,7 +170,9 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
             
             Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
-            
+            Light->SetSUbUVScale(FVector2D(TileSize / TextureSize, TileSize / TextureSize));
+            Light->SetSUbUVOffset(FVector2D((x * TileSize) / TextureSize, (y * TileSize) / TextureSize));
+
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
                 FMath::DegreesToRadians(Light->GetOuterDegree() * 2.0f),
                 1.0f,
@@ -190,14 +202,17 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
                 UpdateObjectConstant(WorldMatrix);
 
                 RenderPrimitive(RenderData);
-            }
-
-            SpotLightCount++;
+            }        
         }
+        SpotLightCount++;
     }
-
     Graphics->DeviceContext->GenerateMips(ViewportResource->GetSpotShadowMapSRV());
 
+    ShadowViewport.TopLeftX = 0;
+    ShadowViewport.TopLeftY = 0;
+    ShadowViewport.Width = FViewportResource::ShadowMapWidth;
+    ShadowViewport.Height = FViewportResource::ShadowMapHeight;
+    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
     Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), ViewportResource->GetDirectionalShadowMapDSV());
 
     for (auto Light : DirectionalLights)
@@ -273,7 +288,6 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     Graphics->DeviceContext->PSSetShaderResources(4, 1, nullSRV);
-    ID3D11Texture2D* PointShadowTex = ViewportResource->GetPointShadowMapArrayTexture();
 
     int lightindex=0;
     for (auto Light : PointLights)
@@ -284,12 +298,15 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
         for (int Face = 0; Face < 6; ++Face)
         {
-            ID3D11DepthStencilView* FaceDSV = ViewportResource->GetPointShadowMapFaceDSV(lightindex * 6 + Face);
+            ID3D11RenderTargetView* FaceRTV = ViewportResource->GetPointShadowMapRTV(lightindex * 6 + Face);
+            ID3D11DepthStencilView* FaceDSV = ViewportResource->GetPointShadowMapDSV(lightindex * 6 + Face);
+            float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+            
             Graphics->DeviceContext->RSSetViewports(1, &PointShadowViewport);
+            Graphics->DeviceContext->ClearRenderTargetView(FaceRTV, ClearColor);
             Graphics->DeviceContext->ClearDepthStencilView(FaceDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-            Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, FaceDSV);
-
-          
+            Graphics->DeviceContext->OMSetRenderTargets(1, &FaceRTV, FaceDSV);
+            
             FCameraConstantBuffer LightViewCamera;
             LightViewCamera.ViewMatrix = JungleMath::CreateViewMatrix(
                 LightPos,
@@ -319,7 +336,8 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
         lightindex++;
     }
-    
+
+    Graphics->DeviceContext->GenerateMips(ViewportResource->GetPointShadowMapArraySRV());
     Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 }
@@ -342,6 +360,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].SubUVScale = Light->GetSubUVScale();
+            LightBufferData.SpotLights[SpotLightsCount].SubUVOffset = Light->GetSubUVOffset();
             LightBufferData.SpotLights[SpotLightsCount].bCastShadow = Light->bCastShadow ? 1 : 0;
             LightBufferData.SpotLights[SpotLightsCount].Sharpness = Light->ShadowSharpen;
             SpotLightsCount++;
@@ -357,7 +377,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.PointLights[PointLightsCount].bCastShadow = Light->bCastShadow ? 1 : 0;
             LightBufferData.PointLights[PointLightsCount].Sharpness = Light->ShadowSharpen;
             for(int i = 0; i<6; i++)
-            LightBufferData.PointLights[PointLightsCount].LightViewMatrix[i] = Light->ViewMatrix[i];
+                LightBufferData.PointLights[PointLightsCount].LightViewMatrix[i] = Light->ViewMatrix[i];
             LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
             PointLightsCount++;
         }

@@ -67,6 +67,9 @@ struct FSpotLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
+
+    FVector2D SubUVScale;
+    FVector2D SubUVOffset;
 };
 
 struct alignas(16) FLightInfoBuffer

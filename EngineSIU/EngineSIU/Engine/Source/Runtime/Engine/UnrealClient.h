@@ -84,14 +84,12 @@ public:
 
     ID3D11Texture2D*& GetSpotShadowMapDepthTexture(){ return SpotShadowMapDepthTexture; }
     ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
-
-
+    
     ID3D11ShaderResourceView*& GetPointShadowMapArraySRV() { return PointShadowMapArraySRV;}
     ID3D11Texture2D*& GetPointShadowMapArrayTexture() { return PointShadowMapArrayTexture; } 
-    //ID3D11DepthStencilView*& GetPointShadowMapDSV(int i) { return PointLightDSVs[i];}
-    ID3D11DepthStencilView*& GetPointShadowMapFaceDSV(int index) { return PointLightFaceDSVs[index]; }
 
-
+    ID3D11RenderTargetView*& GetPointShadowMapRTV(int i) { return PointShadowMapRTVs[i];}
+    ID3D11DepthStencilView*& GetPointShadowMapDSV(int i) { return PointLightDSVs[i];}
 
     ID3D11Texture2D*& GetGizmoDepthStencilTexture() { return GizmoDepthStencilTexture; }
     ID3D11DepthStencilView*& GetGizmoDepthStencilView() { return GizmoDepthStencilView; }
@@ -150,13 +148,12 @@ private:
     ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
 
     ID3D11Texture2D* PointShadowMapArrayTexture = nullptr; // 큐브맵 배열 텍스처
+    ID3D11RenderTargetView* PointShadowMapRTVs[MAX_POINT_LIGHT * 6] = {}; 
     ID3D11ShaderResourceView* PointShadowMapArraySRV = nullptr; // 전체 배열 SRV
-   // ID3D11DepthStencilView* PointLightDSVs[MAX_POINT_LIGHT] = {}; // 라이트별 DSV
     ID3D11ShaderResourceView* PointShadowMapFaceSRVs[MAX_POINT_LIGHT * 6] = {}; // 면별 SRV
-    ID3D11DepthStencilView* PointLightFaceDSVs[MAX_POINT_LIGHT * 6] = {};
- 
 
-
+    ID3D11Texture2D* PointShadowMapArrayDepthTexture = nullptr;
+    ID3D11DepthStencilView* PointLightDSVs[MAX_POINT_LIGHT * 6] = {}; // 라이트별 DSV
     
     ID3D11Texture2D* GizmoDepthStencilTexture = nullptr;
     ID3D11DepthStencilView* GizmoDepthStencilView = nullptr;
