@@ -66,6 +66,9 @@ struct FSpotLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
+    
+    float2 SubUVScale;
+    float2 SubUVOffset;
 };
 
 struct FLightingResult
@@ -280,6 +283,7 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
     float4 SpotLightClipPos = mul(SpotLightView, SpotLightInfo.LightProjectionMatrix);
     float3 SpotShadowMapNDC = SpotLightClipPos.xyz / SpotLightClipPos.w;
     float2 SpotShadowMapUV = NDCToUV(SpotShadowMapNDC);
+    SpotShadowMapUV = SpotShadowMapUV * SpotLightInfo.SubUVScale + SpotLightInfo.SubUVOffset;
 
     //float SpotLightDistance = (SpotLightView.z * -1.0f) / SpotLightInfo.AttenuationRadius;
      float SpotLightDistance = SpotShadowMapNDC.z;
