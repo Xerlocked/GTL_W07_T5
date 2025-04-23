@@ -145,8 +145,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
 
-    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-    Graphics->DeviceContext->PSSetShaderResources(4, 1, nullSRV);
+
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
 
@@ -275,7 +274,8 @@ static const FVector UpDirections[6] = {
     FVector( 0, 1, 0 )   // -Z face → up = +Y
 };
 
-    
+    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+    Graphics->DeviceContext->PSSetShaderResources(4, 1, nullSRV);
     ID3D11Texture2D* PointShadowTex = ViewportResource->GetPointShadowMapArrayTexture();
 
     int lightindex=0;
