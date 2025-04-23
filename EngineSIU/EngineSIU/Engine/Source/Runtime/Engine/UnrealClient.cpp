@@ -16,7 +16,7 @@ FViewportResource::FViewportResource()
 FViewportResource::~FViewportResource()
 {
     Release();
-
+    ReleaseShadowMapResources();
     ClearColors.Empty();
 }
 
@@ -30,12 +30,19 @@ void FViewportResource::Initialize(uint32 InWidth, uint32 InHeight)
     D3DViewport.MinDepth = 0.0f;
 
     HRESULT hr = S_OK;
+
     hr = CreateDepthStencilResources();
     if (FAILED(hr))
     {
         return;
     }
 
+    hr = CreateShadowMapResources();
+    if (FAILED(hr))
+    {
+        return;
+    }
+    
     // Essential resources
     hr = CreateResource(EResourceType::ERT_Compositing);
     if (FAILED(hr))
@@ -159,19 +166,13 @@ void FViewportResource::ClearRenderTargets(ID3D11DeviceContext* DeviceContext)
 
     /////////////////////////////////////
     /// ShadowMap
-    DeviceContext->ClearDepthStencilView(DirectionalShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    DeviceContext->ClearDepthStencilView(SpotShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    
+    DeviceContext->ClearRenderTargetView(DirectionalShadowMapRTV, ClearColor);
+    DeviceContext->ClearRenderTargetView(SpotShadowMapRTV, ClearColor);
 
-    for (int32 i = 0; i < MAX_POINT_LIGHT; ++i) {
-        for(int32 Face=0; Face<6; ++Face)
-        if (PointLightFaceDSVs[i*6+Face]) {
-            DeviceContext->ClearDepthStencilView(
-                PointLightFaceDSVs[i],
-                D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-                1.0f, 0
-            );
-        }
-    }
+    DeviceContext->ClearDepthStencilView(DirectionalShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+    DeviceContext->ClearDepthStencilView(SpotShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 void FViewportResource::ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type)
@@ -189,6 +190,106 @@ std::array<float, 4> FViewportResource::GetClearColor(EResourceType Type) const
         return *Found;
     }
     return { 0.0f, 0.0f, 0.0f, 1.0f };
+}
+
+HRESULT FViewportResource::CreateShadowMapResources()
+{
+    D3D11_TEXTURE2D_DESC ShadowMapTextureDesc;
+    ZeroMemory(&ShadowMapTextureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+    ShadowMapTextureDesc.Format = DXGI_FORMAT_R32G32_TYPELESS;
+    ShadowMapTextureDesc.MipLevels = 0;
+    ShadowMapTextureDesc.ArraySize = 1;
+    ShadowMapTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+    ShadowMapTextureDesc.CPUAccessFlags = 0;
+    ShadowMapTextureDesc.SampleDesc.Count = 1;
+    ShadowMapTextureDesc.SampleDesc.Quality = 0;
+    ShadowMapTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    ShadowMapTextureDesc.Height = (UINT)ShadowMapHeight;
+    ShadowMapTextureDesc.Width = (UINT)ShadowMapWidth;
+    ShadowMapTextureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+    
+    HRESULT hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDesc, nullptr, &DirectionalShadowMapTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDesc, nullptr, &SpotShadowMapTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_SHADER_RESOURCE_VIEW_DESC ShadowShaderResourceViewDesc;
+    ZeroMemory(&ShadowShaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+    ShadowShaderResourceViewDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+    ShadowShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    ShadowShaderResourceViewDesc.Texture2D.MipLevels = -1;
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(DirectionalShadowMapTexture, &ShadowShaderResourceViewDesc, &DirectionalShadowMapSRV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(SpotShadowMapTexture, &ShadowShaderResourceViewDesc, &SpotShadowMapSRV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_RENDER_TARGET_VIEW_DESC ShadowMapRenderTargetViewDesc;
+    ZeroMemory(&ShadowMapRenderTargetViewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
+    ShadowMapRenderTargetViewDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+    ShadowMapRenderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    ShadowMapRenderTargetViewDesc.Texture2D.MipSlice = 0;
+    hr = FEngineLoop::GraphicDevice.Device->CreateRenderTargetView(DirectionalShadowMapTexture, &ShadowMapRenderTargetViewDesc, &DirectionalShadowMapRTV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateRenderTargetView(SpotShadowMapTexture, &ShadowMapRenderTargetViewDesc, &SpotShadowMapRTV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    D3D11_TEXTURE2D_DESC ShadowMapTextureDepthDesc;
+    ZeroMemory(&ShadowMapTextureDepthDesc, sizeof(D3D11_TEXTURE2D_DESC));
+    ShadowMapTextureDepthDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    ShadowMapTextureDepthDesc.MipLevels = 0;
+    ShadowMapTextureDepthDesc.ArraySize = 1;
+    ShadowMapTextureDepthDesc.Usage = D3D11_USAGE_DEFAULT;
+    ShadowMapTextureDepthDesc.CPUAccessFlags = 0;
+    ShadowMapTextureDepthDesc.SampleDesc.Count = 1;
+    ShadowMapTextureDepthDesc.SampleDesc.Quality = 0;
+    ShadowMapTextureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    ShadowMapTextureDepthDesc.Height = (UINT)ShadowMapHeight;
+    ShadowMapTextureDepthDesc.Width = (UINT)ShadowMapWidth;
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDepthDesc, nullptr, &DirectionalShadowMapDepthTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDepthDesc, nullptr, &SpotShadowMapDepthTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_DEPTH_STENCIL_VIEW_DESC ShadowMapDepthStencilViewDesc;
+    ZeroMemory(&ShadowMapDepthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+    ShadowMapDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    ShadowMapDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    ShadowMapDepthStencilViewDesc.Texture2D.MipSlice = 0;
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(DirectionalShadowMapDepthTexture, &ShadowMapDepthStencilViewDesc, &DirectionalShadowMapDSV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(SpotShadowMapDepthTexture, &ShadowMapDepthStencilViewDesc, &SpotShadowMapDSV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
 }
 
 HRESULT FViewportResource::CreateDepthStencilResources()
@@ -246,67 +347,76 @@ HRESULT FViewportResource::CreateDepthStencilResources()
     {
         return hr;
     }
-
-    ////////////////////
-    /// shadow depth view 생성
-
-    D3D11_TEXTURE2D_DESC DirectionalShadowMapTextureDesc;
-    ZeroMemory(&DirectionalShadowMapTextureDesc, sizeof(D3D11_TEXTURE2D_DESC));
-    DirectionalShadowMapTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-    DirectionalShadowMapTextureDesc.MipLevels = 0;
-    DirectionalShadowMapTextureDesc.ArraySize = 1;
-    DirectionalShadowMapTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-    DirectionalShadowMapTextureDesc.CPUAccessFlags = 0;
-    DirectionalShadowMapTextureDesc.SampleDesc.Count = 1;
-    DirectionalShadowMapTextureDesc.SampleDesc.Quality = 0;
-    DirectionalShadowMapTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
-    DirectionalShadowMapTextureDesc.Height = (UINT)ShadowMapHeight;
-    DirectionalShadowMapTextureDesc.Width = (UINT)ShadowMapWidth;
-    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&DirectionalShadowMapTextureDesc, nullptr, &DirectionalShadowMapTexture);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&DirectionalShadowMapTextureDesc, nullptr, &SpotShadowMapTexture);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    D3D11_SHADER_RESOURCE_VIEW_DESC DepthStencilShaderResourceViewDesc;
-    ZeroMemory(&DepthStencilShaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-    DepthStencilShaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    DepthStencilShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    DepthStencilShaderResourceViewDesc.Texture2D.MipLevels = 1;
-    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(DirectionalShadowMapTexture, &DepthStencilShaderResourceViewDesc, &DirectionalShadowMapSRV);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(SpotShadowMapTexture, &DepthStencilShaderResourceViewDesc, &SpotShadowMapSRV);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    D3D11_DEPTH_STENCIL_VIEW_DESC DirectionalShadowMapDepthStencilViewDesc;
-    ZeroMemory(&DirectionalShadowMapDepthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-    DirectionalShadowMapDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    DirectionalShadowMapDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    DirectionalShadowMapDepthStencilViewDesc.Texture2D.MipSlice = 0;
-    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(DirectionalShadowMapTexture, &DirectionalShadowMapDepthStencilViewDesc, &DirectionalShadowMapDSV);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(SpotShadowMapTexture, &DirectionalShadowMapDepthStencilViewDesc, &SpotShadowMapDSV);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
     
     return hr;
+}
+
+void FViewportResource::ReleaseShadowMapResources()
+{
+        
+    if (DirectionalShadowMapTexture)
+    {
+        DirectionalShadowMapTexture->Release();
+        DirectionalShadowMapTexture = nullptr;
+    }
+    if (DirectionalShadowMapRTV)
+    {
+        DirectionalShadowMapRTV->Release();
+        DirectionalShadowMapRTV = nullptr;
+    }
+    if (DirectionalShadowMapSRV)
+    {
+        DirectionalShadowMapSRV->Release();
+        DirectionalShadowMapSRV = nullptr;
+    }
+    if (SpotShadowMapTexture)
+    {
+        SpotShadowMapTexture->Release();
+        SpotShadowMapTexture = nullptr;
+    }
+    if (SpotShadowMapRTV)
+    {
+        SpotShadowMapRTV->Release();
+        SpotShadowMapRTV = nullptr;
+    }
+    if (SpotShadowMapSRV)
+    {
+        SpotShadowMapSRV->Release();
+        SpotShadowMapSRV = nullptr;
+    }
+
+    if (DirectionalShadowMapDepthTexture)
+    {
+        DirectionalShadowMapDepthTexture->Release();
+        DirectionalShadowMapDepthTexture = nullptr;
+    }
+
+    if (DirectionalShadowMapDSV)
+    {
+        DirectionalShadowMapDSV->Release();
+        DirectionalShadowMapDSV = nullptr;
+    }
+
+    if (SpotShadowMapDepthTexture)
+    {
+        SpotShadowMapDepthTexture->Release();
+        SpotShadowMapDepthTexture = nullptr;
+    }
+
+    if (SpotShadowMapDSV)
+    {
+        SpotShadowMapDSV->Release();
+        SpotShadowMapDSV = nullptr;
+    }
+    
+    for (int i = 0; i < 6; ++i)
+    {
+        if (PointShadowMapFaceSRVs[i])
+        {
+            PointShadowMapFaceSRVs[i]->Release();
+            PointShadowMapFaceSRVs[i] = nullptr;
+        }
+    }
 }
 
 void FViewportResource::ReleaseDepthStencilResources()
@@ -325,45 +435,6 @@ void FViewportResource::ReleaseDepthStencilResources()
     {
         DepthStencilTexture->Release();
         DepthStencilTexture = nullptr;
-    }
-    
-    if (DirectionalShadowMapTexture)
-    {
-        DirectionalShadowMapTexture->Release();
-        DirectionalShadowMapTexture = nullptr;
-    }
-    if (DirectionalShadowMapDSV)
-    {
-        DirectionalShadowMapDSV->Release();
-        DirectionalShadowMapDSV = nullptr;
-    }
-    if (DirectionalShadowMapSRV)
-    {
-        DirectionalShadowMapSRV->Release();
-        DirectionalShadowMapSRV = nullptr;
-    }
-    if (SpotShadowMapTexture)
-    {
-        SpotShadowMapTexture->Release();
-        SpotShadowMapTexture = nullptr;
-    }
-    if (SpotShadowMapDSV)
-    {
-        SpotShadowMapDSV->Release();
-        SpotShadowMapDSV = nullptr;
-    }
-    if (SpotShadowMapSRV)
-    {
-        SpotShadowMapSRV->Release();
-        SpotShadowMapSRV = nullptr;
-    }
-    if (PointShadowMapArrayTexture) {
-        PointShadowMapArrayTexture->Release();
-        PointShadowMapArrayTexture = nullptr;
-    }
-    if (PointShadowMapArraySRV) {
-        PointShadowMapArraySRV->Release();
-        PointShadowMapArraySRV = nullptr;
     }
     for (auto& dsv : PointLightFaceDSVs) {
         if (dsv) dsv->Release();
