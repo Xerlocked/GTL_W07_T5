@@ -20,6 +20,7 @@ public:
     FMatrix ViewMatrix[6];
     FMatrix ProjectionMatrix;
 
+    int index;
 protected:
 
     FBoundingBox AABB;

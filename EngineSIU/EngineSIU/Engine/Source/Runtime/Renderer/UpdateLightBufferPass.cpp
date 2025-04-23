@@ -302,6 +302,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
             Light->ViewMatrix[Face] = LightViewCamera.ViewMatrix;
             Light->ProjectionMatrix = LightViewCamera.ProjectionMatrix;
+            Light->index = lightindex;
 
             BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCamera);
 

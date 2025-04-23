@@ -98,7 +98,7 @@ public:
 
     ID3D11ShaderResourceView* GetPointShadowMapFaceSRV(uint32 FaceIndex) const
     {
-        if (FaceIndex >= 6) return nullptr;
+        if (FaceIndex >= 6 * MAX_POINT_LIGHT) return nullptr;
         return PointShadowMapFaceSRVs[FaceIndex];
     }
 
