@@ -202,8 +202,8 @@ void PropertyEditorPanel::Render()
                         pointlightObj->ShadowSlopeBias = ShadowSlopeBias;
                     }
 
-                    float ShadowSharpen = pointlightObj->ShadowSharpen;
-                    if (ImGui::DragFloat("Sharpen##Point", &ShadowSharpen, 0.1f, 0.0f, 10.f, "%.1f")) {
+                    int32 ShadowSharpen = pointlightObj->ShadowSharpen;
+                    if (ImGui::DragInt("Sharpen##Point", &ShadowSharpen, 1, 0, 12, "%d")) {
                         pointlightObj->ShadowSharpen = ShadowSharpen;
                     }
                     
@@ -294,8 +294,8 @@ void PropertyEditorPanel::Render()
                         spotlightObj->ShadowSlopeBias = ShadowSlopeBias;
                     }
 
-                    float ShadowSharpen = spotlightObj->ShadowSharpen;
-                    if (ImGui::DragFloat("Sharpen##Spot", &ShadowSharpen, 0.1f, 0.0f, 10.f, "%.1f")) {
+                    int32 ShadowSharpen = spotlightObj->ShadowSharpen;
+                    if (ImGui::DragInt("Sharpen##Spot", &ShadowSharpen, 1, 0, 12, "%d")) {
                         spotlightObj->ShadowSharpen = ShadowSharpen;
                     }
 
@@ -367,8 +367,8 @@ void PropertyEditorPanel::Render()
                         dirlightObj->ShadowSlopeBias = ShadowSlopeBias;
                     }
 
-                    float ShadowSharpen = dirlightObj->ShadowSharpen;
-                    if (ImGui::DragFloat("Sharpen##Directional", &ShadowSharpen, 0.1f, 0.0f, 10.f, "%.1f")) {
+                    int32 ShadowSharpen = dirlightObj->ShadowSharpen;
+                    if (ImGui::DragInt("Sharpen##Directional", &ShadowSharpen, 1, 0, 12, "%d")) {
                         dirlightObj->ShadowSharpen = ShadowSharpen;
                     }
                                     

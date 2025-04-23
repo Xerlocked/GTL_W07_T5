@@ -295,6 +295,18 @@ void Console::ExecuteCommand(const std::string& command)
     else if (command.starts_with("stat ")) { // stat 명령어 처리
         overlay.ToggleStat(command);
     }
+    else if (command.starts_with("shadow_filter "))
+    {
+        if (command == "shadow_filter VSM")
+        {
+            
+        }
+
+        if (command == "shadow_filter PCF")
+        {
+            
+        }
+    }
     else {
         AddLog(LogLevel::Error, "Unknown command: %s", command.c_str());
     }
