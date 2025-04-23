@@ -66,6 +66,9 @@ struct FSpotLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
+    
+    float2 SubUVScale;
+    float2 SubUVOffset;
 };
 
 struct FLightingResult
@@ -127,7 +130,7 @@ float CalculateShadow(Texture2D ShadowMap, float2 ShadowMapUV, float LightDistan
     ///////////////////////////////////////////////////////////////
     /// VSM
     ///  // One-tailed inequality valid if t > Moments.x
-    float2 moments = ShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 1).rg;
+    float2 moments = ShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 3).rg;
     float mean = moments.x; //mean depth 평균
     float mean2 = moments.y; //mean2 detph^2 평균
     
@@ -280,6 +283,7 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
     float4 SpotLightClipPos = mul(SpotLightView, SpotLightInfo.LightProjectionMatrix);
     float3 SpotShadowMapNDC = SpotLightClipPos.xyz / SpotLightClipPos.w;
     float2 SpotShadowMapUV = NDCToUV(SpotShadowMapNDC);
+    SpotShadowMapUV = SpotShadowMapUV * SpotLightInfo.SubUVScale + SpotLightInfo.SubUVOffset;
 
     //float SpotLightDistance = (SpotLightView.z * -1.0f) / SpotLightInfo.AttenuationRadius;
      float SpotLightDistance = SpotShadowMapNDC.z;

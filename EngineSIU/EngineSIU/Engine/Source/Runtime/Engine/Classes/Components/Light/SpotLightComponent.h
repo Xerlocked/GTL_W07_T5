@@ -1,6 +1,6 @@
 #pragma once
 #include "LightComponent.h"
-
+#include "Math/Vector.h"
 class USpotLightComponent :public ULightComponentBase
 {
 
@@ -46,8 +46,20 @@ public:
     float GetFalloff() const;
     void SetFalloff(float InFalloff);
 
+    FVector2D GetSubUVScale() { return SubUVScale; }
+    void SetSUbUVScale(FVector2D inSubUVScale)
+    {
+        SubUVScale = inSubUVScale;
+    }
+    FVector2D GetSubUVOffset() { return SubUVOffset; }
+    void SetSUbUVOffset(FVector2D inSubUVOffset)
+    {
+        SubUVOffset = inSubUVOffset;
+    }
+
 private:
     FSpotLightInfo SpotLightInfo;
+    FVector2D SubUVScale;
+    FVector2D SubUVOffset;
 };
-
 
