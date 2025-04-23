@@ -21,6 +21,20 @@ public:
     FMatrix ProjectionMatrix;
     FVector LightCameraPos;
 
+
+    /**
+     * Shadow
+     */
+    bool bCastShadow = true;
+
+    /**
+     * Todo: Maybe this properties move to the ULightComponent 
+     */
+    int ShadowResolutionScale = 1024.f;
+    float ShadowBias = 0.0f;
+    float ShadowSlopeBias = 0.0f;
+    float ShadowSharpen = 1.0f;
+    
 protected:
 
     FBoundingBox AABB;

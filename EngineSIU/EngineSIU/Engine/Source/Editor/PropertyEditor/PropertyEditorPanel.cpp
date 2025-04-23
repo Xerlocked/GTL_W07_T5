@@ -159,7 +159,6 @@ void PropertyEditorPanel::Render()
 
             if (ImGui::TreeNodeEx("PointLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
-                static int LightFaceNumber = 0;
                 DrawColorProperty("Light Color",
                     [&]() { return pointlightObj->GetLightColor(); },
                     [&](FLinearColor c) { pointlightObj->SetLightColor(c); });
@@ -177,30 +176,50 @@ void PropertyEditorPanel::Render()
                 if (ImGui::DragFloat("Falloff", &Falloff, 0.01f, 0.01f, 10.f, "%.3f")) {
                     pointlightObj->SetFalloff(Falloff);
                 }
-                ID3D11ShaderResourceView* CubeSRV = ViewportResource->GetPointShadowMapSRV();
-                ImTextureID SRVID = reinterpret_cast<ImTextureID>(CubeSRV);
 
-                ImGui::Text("Point Light ShadowMap Faces:");
-                ImGui::Columns(3, nullptr, false);
-
-                for (int i = 0; i < 6; ++i)
+                if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
                 {
-                    ImGui::Text("Face %d", i);
-                    ID3D11ShaderResourceView* SRV = ViewportResource->GetPointShadowMapFaceSRV(i);
-                    ImTextureID TexID = reinterpret_cast<ImTextureID>(SRV);
-                    if (ImGui::ImageButton("PointTexture##" + i, TexID, ImVec2(96, 96)))
-                    {
-                        LightFaceNumber = i;
-                    }
-                    ImGui::NextColumn();
-                }
-                ImGui::Columns(1);
+                    ImGui::Spacing();
 
-                FString ShowLightText = "Show Face " + std::to_string(LightFaceNumber) + " light's perspective";  
-                
-                if (ImGui::Button(GetData(ShowLightText)))
-                {
                     
+                    if (ImGui::Checkbox("Cast Shadow##Point", &pointlightObj->bCastShadow))
+                    {
+                        
+                    }
+
+                    int ShadowResolutionScale = pointlightObj->ShadowResolutionScale;
+                    if (ImGui::DragInt("Resolution##Point", &ShadowResolutionScale, 1024, 1024, 4096, "%d")) {
+                        pointlightObj->ShadowResolutionScale = ShadowResolutionScale;
+                    }
+
+                    float ShadowBias = pointlightObj->ShadowBias;
+                    if (ImGui::DragFloat("Bias##Point", &ShadowBias, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        pointlightObj->ShadowBias = ShadowBias;
+                    }
+
+                    float ShadowSlopeBias = pointlightObj->ShadowSlopeBias;
+                    if (ImGui::DragFloat("Slope Bias##Point", &ShadowSlopeBias, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        pointlightObj->ShadowSlopeBias = ShadowSlopeBias;
+                    }
+
+                    float ShadowSharpen = pointlightObj->ShadowSharpen;
+                    if (ImGui::DragFloat("Sharpen##Point", &ShadowSharpen, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        pointlightObj->ShadowSharpen = ShadowSharpen;
+                    }
+                    
+                    ImGui::Columns(3, nullptr, false);
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        ImGui::Text("Face %d", i);
+                        ID3D11ShaderResourceView* SRV = ViewportResource->GetPointShadowMapFaceSRV(i);
+                        ImTextureID TexID = reinterpret_cast<ImTextureID>(SRV);
+                        if (ImGui::ImageButton("PointTexture##" + i, TexID, ImVec2(96, 96)))
+                        {
+                            // do something if clicked the texture.
+                        }
+                        ImGui::NextColumn();
+                    }
+                    ImGui::Columns(1);
                 }
                 
                 ImGui::TreePop();
@@ -249,19 +268,51 @@ void PropertyEditorPanel::Render()
                     spotlightObj->SetFalloff(Falloff);
                 }
 
-                ID3D11ShaderResourceView* SpotSRV = ViewportResource->GetSpotShadowMapSRV(); 
 
-                ImTextureID SRVID = reinterpret_cast<ImTextureID>(SpotSRV);
-
-                ImGui::Image(SRVID, ImVec2(ParentSize.x - 154, ParentSize.x - 154));
-
-                if (ImGui::Button("Show the light's perspective"))
+                if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
                 {
-                    const FVector SpotDirection = spotlightObj->GetDirection();
-                    const FVector SpotLocation = spotlightObj->GetWorldLocation() + SpotDirection * 1.5f;
+                    ImGui::Spacing();
+
                     
-                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraLocation(SpotLocation);
-                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->CameraLookAt(SpotDirection);
+                    if (ImGui::Checkbox("Cast Shadow##Spot", &spotlightObj->bCastShadow))
+                    {
+                        
+                    }
+
+                    int ShadowResolutionScale = spotlightObj->ShadowResolutionScale;
+                    if (ImGui::DragInt("Resolution##Spot", &ShadowResolutionScale, 1024, 1024, 4096, "%d")) {
+                        spotlightObj->ShadowResolutionScale = ShadowResolutionScale;
+                    }
+
+                    float ShadowBias = spotlightObj->ShadowBias;
+                    if (ImGui::DragFloat("Bias##Spot", &ShadowBias, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        spotlightObj->ShadowBias = ShadowBias;
+                    }
+
+                    float ShadowSlopeBias = spotlightObj->ShadowSlopeBias;
+                    if (ImGui::DragFloat("Slope Bias##Spot", &ShadowSlopeBias, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        spotlightObj->ShadowSlopeBias = ShadowSlopeBias;
+                    }
+
+                    float ShadowSharpen = spotlightObj->ShadowSharpen;
+                    if (ImGui::DragFloat("Sharpen##Spot", &ShadowSharpen, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        spotlightObj->ShadowSharpen = ShadowSharpen;
+                    }
+
+                    ID3D11ShaderResourceView* SpotSRV = ViewportResource->GetSpotShadowMapSRV(); 
+
+                    ImTextureID SRVID = reinterpret_cast<ImTextureID>(SpotSRV);
+
+                    ImGui::Image(SRVID, ImVec2(ParentSize.x - 154, ParentSize.x - 154));
+
+                    if (ImGui::Button("Show the light's perspective"))
+                    {
+                        const FVector SpotDirection = spotlightObj->GetDirection();
+                        const FVector SpotLocation = spotlightObj->GetWorldLocation() + SpotDirection * 1.5f;
+                    
+                        GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraLocation(SpotLocation);
+                        GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->CameraLookAt(SpotDirection);
+                    }
                 }
                 
                 ImGui::TreePop();
@@ -290,18 +341,45 @@ void PropertyEditorPanel::Render()
                 LightDirection = dirlightObj->GetDirection();
                 FImGuiWidget::DrawVec3Control("Direction", LightDirection, 0, 85);
 
-                ID3D11ShaderResourceView* DirectionalSRV = ViewportResource->GetDirectionalShadowMapSRV(); 
 
-                ImTextureID SRVID = reinterpret_cast<ImTextureID>(DirectionalSRV);
-                
-                ImGui::Image(SRVID, ImVec2(ParentSize.x - 154, ParentSize.x - 154));
-
-
-                if (ImGui::Button("Show the light's perspective"))
+                if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ImGui::Spacing();
+
                     
-                }
+                    if (ImGui::Checkbox("Cast Shadow##Directional", &dirlightObj->bCastShadow))
+                    {
+                        
+                    }
+
+                    int ShadowResolutionScale = dirlightObj->ShadowResolutionScale;
+                    if (ImGui::DragInt("Resolution##Directional", &ShadowResolutionScale, 1024, 1024, 4096, "%d")) {
+                        dirlightObj->ShadowResolutionScale = ShadowResolutionScale;
+                    }
+
+                    float ShadowBias = dirlightObj->ShadowBias;
+                    if (ImGui::DragFloat("Bias##Directional", &ShadowBias, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        dirlightObj->ShadowBias = ShadowBias;
+                    }
+
+                    float ShadowSlopeBias = dirlightObj->ShadowSlopeBias;
+                    if (ImGui::DragFloat("Slope Bias##Directional", &ShadowSlopeBias, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        dirlightObj->ShadowSlopeBias = ShadowSlopeBias;
+                    }
+
+                    float ShadowSharpen = dirlightObj->ShadowSharpen;
+                    if (ImGui::DragFloat("Sharpen##Directional", &ShadowSharpen, 0.1f, 0.0f, 10.f, "%.1f")) {
+                        dirlightObj->ShadowSharpen = ShadowSharpen;
+                    }
+                                    
+                    ID3D11ShaderResourceView* DirectionalSRV = ViewportResource->GetDirectionalShadowMapSRV(); 
+
+                    ImTextureID SRVID = reinterpret_cast<ImTextureID>(DirectionalSRV);
                 
+                    ImGui::Image(SRVID, ImVec2(ParentSize.x - 154, ParentSize.x - 154));
+                
+                }
+
                 ImGui::TreePop();
             }
 
