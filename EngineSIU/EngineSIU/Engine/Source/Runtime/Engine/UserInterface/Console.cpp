@@ -5,6 +5,7 @@
 #include "Components/Light/DirectionalLightComponent.h"
 #include "Components/Light/PointLightComponent.h"
 #include "Components/Light/SpotLightComponent.h"
+#include "D3D11RHI/DXDShaderManager.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "UnrealEd/EditorViewportClient.h"
@@ -299,12 +300,12 @@ void Console::ExecuteCommand(const std::string& command)
     {
         if (command == "shadow_filter VSM")
         {
-            
+            FEngineLoop::ResourceManager.ShaderFilterMode = 0;
         }
 
         if (command == "shadow_filter PCF")
         {
-            
+            FEngineLoop::ResourceManager.ShaderFilterMode = 1;
         }
     }
     else {
