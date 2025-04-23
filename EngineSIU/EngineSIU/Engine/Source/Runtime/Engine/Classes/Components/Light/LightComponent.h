@@ -19,8 +19,8 @@ public:
     
     FMatrix ViewMatrix[6];
     FMatrix ProjectionMatrix;
-    FVector LightCameraPos;
 
+    int index;
 protected:
 
     FBoundingBox AABB;

@@ -72,24 +72,33 @@ public:
     ID3D11ShaderResourceView*& GetDepthStencilSRV() { return DepthStencilSRV; }
 
     ID3D11Texture2D*& GetDirectionalShadowMapTexture(){ return DirectionalShadowMapTexture; }
-    ID3D11DepthStencilView*& GetDirectionalShadowMapDSV() { return DirectionalShadowMapDSV; }
+    ID3D11RenderTargetView*& GetDirectionalShadowMapRTV() { return DirectionalShadowMapRTV; }
     ID3D11ShaderResourceView*& GetDirectionalShadowMapSRV() { return DirectionalShadowMapSRV; }
 
+    ID3D11Texture2D*& GetDirectionalShadowMapDepthTexture(){ return DirectionalShadowMapDepthTexture; }
+    ID3D11DepthStencilView*& GetDirectionalShadowMapDSV() { return DirectionalShadowMapDSV; }
+    
     ID3D11Texture2D*& GetSpotShadowMapTexture(){ return SpotShadowMapTexture; }
-    ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
+    ID3D11RenderTargetView*& GetSpotShadowMapRTV() { return SpotShadowMapRTV; }
     ID3D11ShaderResourceView*& GetSpotShadowMapSRV() { return SpotShadowMapSRV; }
+
+    ID3D11Texture2D*& GetSpotShadowMapDepthTexture(){ return SpotShadowMapDepthTexture; }
+    ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
+
 
     ID3D11ShaderResourceView*& GetPointShadowMapArraySRV() { return PointShadowMapArraySRV;}
     ID3D11Texture2D*& GetPointShadowMapArrayTexture() { return PointShadowMapArrayTexture; } 
     //ID3D11DepthStencilView*& GetPointShadowMapDSV(int i) { return PointLightDSVs[i];}
     ID3D11DepthStencilView*& GetPointShadowMapFaceDSV(int index) { return PointLightFaceDSVs[index]; }
 
+
+
     ID3D11Texture2D*& GetGizmoDepthStencilTexture() { return GizmoDepthStencilTexture; }
     ID3D11DepthStencilView*& GetGizmoDepthStencilView() { return GizmoDepthStencilView; }
 
     ID3D11ShaderResourceView* GetPointShadowMapFaceSRV(uint32 FaceIndex) const
     {
-        if (FaceIndex >= 6) return nullptr;
+        if (FaceIndex >= 6 * MAX_POINT_LIGHT) return nullptr;
         return PointShadowMapFaceSRVs[FaceIndex];
     }
 
@@ -111,7 +120,8 @@ public:
     void ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type);
 
     std::array<float, 4> GetClearColor(EResourceType Type) const;
-    
+    HRESULT CreateShadowMapResources();
+
     // inline static int ShadowMapWidth = 1024;
     // inline static int ShadowMapHeight = 1024;
     inline static int ShadowMapWidth = 4096;
@@ -126,13 +136,18 @@ private:
     ID3D11ShaderResourceView* DepthStencilSRV = nullptr;
 
     ID3D11Texture2D* DirectionalShadowMapTexture = nullptr;
-    ID3D11DepthStencilView* DirectionalShadowMapDSV = nullptr;
+    ID3D11RenderTargetView* DirectionalShadowMapRTV = nullptr;
     ID3D11ShaderResourceView* DirectionalShadowMapSRV = nullptr;
 
-    ID3D11Texture2D* SpotShadowMapTexture = nullptr;
-    ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
-    ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
+    ID3D11Texture2D* DirectionalShadowMapDepthTexture = nullptr;
+    ID3D11DepthStencilView* DirectionalShadowMapDSV = nullptr;
     
+    ID3D11Texture2D* SpotShadowMapTexture = nullptr;
+    ID3D11RenderTargetView* SpotShadowMapRTV = nullptr;
+    ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
+
+    ID3D11Texture2D* SpotShadowMapDepthTexture = nullptr;
+    ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
 
     ID3D11Texture2D* PointShadowMapArrayTexture = nullptr; // 큐브맵 배열 텍스처
     ID3D11ShaderResourceView* PointShadowMapArraySRV = nullptr; // 전체 배열 SRV
@@ -149,6 +164,7 @@ private:
     TMap<EResourceType, FRenderTargetRHI> RenderTargets;
 
     HRESULT CreateDepthStencilResources();
+    void ReleaseShadowMapResources();
 
     HRESULT CreateCubeShadowMapResources();
 

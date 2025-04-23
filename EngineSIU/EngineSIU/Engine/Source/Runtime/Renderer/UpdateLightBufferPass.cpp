@@ -64,7 +64,7 @@ void FUpdateLightBufferPass::PrepareRenderState()
     Graphics->DeviceContext->IASetInputLayout(InputLayout);
     Graphics->DeviceContext->RSSetState(Graphics->RasterizerShadowMapBack);
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(nullptr, nullptr, 0); // 픽셀 쉐이더는 필요없음.
+    Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
     Graphics->DeviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     BufferManager->BindConstantBuffer(TEXT("FObjectConstantBuffer"), 0, EShaderStage::Vertex);
@@ -136,6 +136,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
     int DirectionalLightsCount = 0;
     int SpotLightCount = 0;
+    float TextureSize = 4096.0f;
 
     OnShaderReload();
     PrepareRenderState();
@@ -143,14 +144,21 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     UINT OriginalViewportCount = 1;
     D3D11_VIEWPORT OriginalViewport = {};
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
-    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-
-
-    Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), ViewportResource->GetSpotShadowMapDSV());
+    int TileSize = 1024;
+    int NumTilesPerRow = 4;
 
     for (auto Light : SpotLights)
     {
+        int x = SpotLightCount % NumTilesPerRow;
+        int y = SpotLightCount / NumTilesPerRow;
+
+        ShadowViewport.TopLeftX = x * TileSize;
+        ShadowViewport.TopLeftY = y * TileSize;
+        ShadowViewport.Width = TileSize;
+        ShadowViewport.Height = TileSize;
+
+        Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
         if (SpotLightCount < MAX_SPOT_LIGHT)
         {
             //Light 기준 Camera Update
@@ -160,10 +168,10 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
             FCameraConstantBuffer LightViewCameraConstant;
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
-
-
-            Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
             
+            Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
+            Light->SetSUbUVScale(FVector2D(TileSize / TextureSize, TileSize / TextureSize));
+            Light->SetSUbUVOffset(FVector2D((x * TileSize) / TextureSize, (y * TileSize) / TextureSize));
 
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
                 FMath::DegreesToRadians(Light->GetOuterDegree() * 2.0f),
@@ -194,14 +202,18 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
                 UpdateObjectConstant(WorldMatrix);
 
                 RenderPrimitive(RenderData);
-            }
-
-            SpotLightCount++;
+            }        
         }
+        SpotLightCount++;
     }
+    Graphics->DeviceContext->GenerateMips(ViewportResource->GetSpotShadowMapSRV());
 
-    Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetDirectionalShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetDirectionalShadowMapDSV());
+    ShadowViewport.TopLeftX = 0;
+    ShadowViewport.TopLeftY = 0;
+    ShadowViewport.Width = FViewportResource::ShadowMapWidth;
+    ShadowViewport.Height = FViewportResource::ShadowMapHeight;
+    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), ViewportResource->GetDirectionalShadowMapDSV());
 
     for (auto Light : DirectionalLights)
     {
@@ -211,18 +223,15 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             FVector LightDir = Light->GetDirection().GetSafeNormal();
             FVector LightPos = -LightDir * (Viewport->FarClip / 2);
             FVector TargetPos = LightPos + LightDir;
-            // FVector TargetPos = FVector::ZeroVector;
             FCameraConstantBuffer LightViewCameraConstant;
 
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
 
             Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
 
-            Light->LightCameraPos = LightPos;
-
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateOrthoProjectionMatrix(
-                100,
-                100,
+                300,
+                300,
                 Viewport->NearClip,
                 Viewport->FarClip
             );
@@ -254,25 +263,28 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             DirectionalLightsCount++;
         }
     }
-// 0:+X, 1:-X, 2:+Y, 3:-Y, 4:+Z, 5:-Z 순서로 Face 지정
-static const FVector LookDirections[6] = {
-    FVector( +1,  0,  0 ),  // +X
-    FVector( -1,  0,  0 ),  // -X
-    FVector(  0, +1,  0 ),  // +Y
-    FVector(  0, -1,  0 ),  // -Y
-    FVector(  0,  0, +1 ),  // +Z
-    FVector(  0,  0, -1 )   // -Z
-};
 
-// Z축(up)과 colinear하지 않도록, Z‑face만 Y축을 up으로 사용
-static const FVector UpDirections[6] = {
-    FVector( 0, 1, 0 ),  // +X face → up = +Z
-    FVector( 0, 1, 0 ),  // -X face → up = +Z
-    FVector( 0, 0, -1 ),  // +Y face → up = +Z
-    FVector( 0, 0, 1 ),  // -Y face → up = +Z
-    FVector( 0, 1, 0 ),  // +Z face → up = +Y
-    FVector( 0, 1, 0 )   // -Z face → up = +Y
-};
+    Graphics->DeviceContext->GenerateMips(ViewportResource->GetDirectionalShadowMapSRV());
+    
+    // 0:+X, 1:-X, 2:+Y, 3:-Y, 4:+Z, 5:-Z 순서로 Face 지정
+    static const FVector LookDirections[6] = {
+        FVector( +1,  0,  0 ),  // +X
+        FVector( -1,  0,  0 ),  // -X
+        FVector(  0, +1,  0 ),  // +Y
+        FVector(  0, -1,  0 ),  // -Y
+        FVector(  0,  0, +1 ),  // +Z
+        FVector(  0,  0, -1 )   // -Z
+    };
+
+    // Z축(up)과 colinear하지 않도록, Z‑face만 Y축을 up으로 사용
+    static const FVector UpDirections[6] = {
+        FVector( 0, 1, 0 ),  // +X face → up = +Z
+        FVector( 0, 1, 0 ),  // -X face → up = +Z
+        FVector( 0, 0, -1 ),  // +Y face → up = +Z
+        FVector( 0, 0, 1 ),  // -Y face → up = +Z
+        FVector( 0, 1, 0 ),  // +Z face → up = +Y
+        FVector( 0, 1, 0 )   // -Z face → up = +Y
+    };
 
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     Graphics->DeviceContext->PSSetShaderResources(4, 1, nullSRV);
@@ -305,6 +317,7 @@ static const FVector UpDirections[6] = {
 
             Light->ViewMatrix[Face] = LightViewCamera.ViewMatrix;
             Light->ProjectionMatrix = LightViewCamera.ProjectionMatrix;
+            Light->index = lightindex;
 
             BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCamera);
 
@@ -344,6 +357,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].SubUVScale = Light->GetSubUVScale();
+            LightBufferData.SpotLights[SpotLightsCount].SubUVOffset = Light->GetSubUVOffset();
             SpotLightsCount++;
         }
     }
@@ -403,7 +418,14 @@ void FUpdateLightBufferPass::CreateShader()
         return;
     }
 
+    hr = ShaderManager->AddPixelShader(L"ShadowMapPixelShader", L"Shaders/ShadowMapPixelShader.hlsl", "mainPS");
+    if (FAILED(hr))
+    {
+        return;
+    }
+
     VertexShader = ShaderManager->GetVertexShaderByKey(L"ShadowMapVertexShader");
+    PixelShader = ShaderManager->GetPixelShaderByKey(L"ShadowMapPixelShader");
     InputLayout = ShaderManager->GetInputLayoutByKey(L"StaticMeshVertexShader");
 }
 
