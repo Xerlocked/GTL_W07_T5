@@ -48,6 +48,13 @@ void FUpdateLightBufferPass::Initialize(FDXDBufferManager* InBufferManager, FGra
     ShadowViewport.TopLeftX = 0;
     ShadowViewport.TopLeftY = 0;
 
+    PointShadowViewport.Width = 1024; //1024;
+    PointShadowViewport.Height = 1024; //1024
+    PointShadowViewport.MinDepth = 0.0f;
+    PointShadowViewport.MaxDepth = 1.0f;
+    PointShadowViewport.TopLeftX = 0;
+    PointShadowViewport.TopLeftY = 0;
+
     CreateShader();
 }
 
@@ -137,7 +144,6 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     D3D11_VIEWPORT OriginalViewport = {};
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-
 
     Graphics->DeviceContext->ClearDepthStencilView(ViewportResource->GetSpotShadowMapDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
@@ -267,10 +273,10 @@ static const FVector UpDirections[6] = {
     FVector( 0, 1, 0 )   // -Z face → up = +Y
 };
 
+    
+    ID3D11Texture2D* PointShadowTex = ViewportResource->GetPointShadowMapArrayTexture();
 
-
-    ID3D11Texture2D* PointShadowTex = ViewportResource->GetPointLightMapTexture();
-
+    int lightindex=0;
     for (auto Light : PointLights)
     {
         FVector LightPos = Light->GetWorldLocation();
@@ -279,24 +285,21 @@ static const FVector UpDirections[6] = {
 
         for (int Face = 0; Face < 6; ++Face)
         {
-            Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-
-            D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-            dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-            dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-            dsvDesc.Texture2DArray.MipSlice = 0;
-            dsvDesc.Texture2DArray.FirstArraySlice = Face;
-            dsvDesc.Texture2DArray.ArraySize = 1;
-
-            ID3D11DepthStencilView* FaceDSV = nullptr;
-            Graphics->Device->CreateDepthStencilView(PointShadowTex, &dsvDesc, &FaceDSV);
-
+            ID3D11DepthStencilView* FaceDSV = ViewportResource->GetPointShadowMapFaceDSV(lightindex * 6 + Face);
+            Graphics->DeviceContext->RSSetViewports(1, &PointShadowViewport);
             Graphics->DeviceContext->ClearDepthStencilView(FaceDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
             Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, FaceDSV);
 
+          
             FCameraConstantBuffer LightViewCamera;
-            LightViewCamera.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, LightPos + LookDirections[Face], UpDirections[Face]);
-            LightViewCamera.ProjectionMatrix = JungleMath::CreateProjectionMatrix(FMath::DegreesToRadians(90.0f), 1.0f, Near, Far);
+            LightViewCamera.ViewMatrix = JungleMath::CreateViewMatrix(
+                LightPos,
+                LightPos + LookDirections[Face],
+                UpDirections[Face]
+            );
+            LightViewCamera.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
+                FMath::DegreesToRadians(90.0f), 1.0f, Near, Far
+            );
 
             Light->ViewMatrix[Face] = LightViewCamera.ViewMatrix;
             Light->ProjectionMatrix = LightViewCamera.ProjectionMatrix;
@@ -312,9 +315,9 @@ static const FVector UpDirections[6] = {
                 UpdateObjectConstant(Comp->GetWorldMatrix());
                 RenderPrimitive(RenderData);
             }
-
-            FaceDSV->Release();
         }
+
+        lightindex++;
     }
     
     Graphics->DeviceContext->RSSetViewports(OriginalViewportCount, &OriginalViewport);

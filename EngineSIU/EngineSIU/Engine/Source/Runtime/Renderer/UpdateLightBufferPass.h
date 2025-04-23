@@ -43,7 +43,8 @@ private:
     TArray<UStaticMeshComponent*> StaticMeshComponents;
 
     D3D11_VIEWPORT ShadowViewport;
-    
+    D3D11_VIEWPORT PointShadowViewport;
+
     ID3D11VertexShader* VertexShader;
     ID3D11InputLayout* InputLayout;
 

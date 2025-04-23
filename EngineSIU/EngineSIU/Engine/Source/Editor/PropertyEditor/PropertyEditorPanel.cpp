@@ -176,8 +176,8 @@ void PropertyEditorPanel::Render()
                 if (ImGui::DragFloat("Falloff", &Falloff, 0.01f, 0.01f, 10.f, "%.3f")) {
                     pointlightObj->SetFalloff(Falloff);
                 }
-                ID3D11ShaderResourceView* CubeSRV = ViewportResource->GetPointShadowMapSRV();
-                ImTextureID SRVID = reinterpret_cast<ImTextureID>(CubeSRV);
+                //ID3D11ShaderResourceView* CubeSRV = ViewportResource->GetPointShadowMapSRV();
+                //ImTextureID SRVID = reinterpret_cast<ImTextureID>(CubeSRV);
 
                 ImGui::Text("Point Light ShadowMap Faces:");
                 ImGui::Columns(3, nullptr, false);

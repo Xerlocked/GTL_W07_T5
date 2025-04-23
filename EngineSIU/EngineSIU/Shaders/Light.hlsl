@@ -13,7 +13,7 @@
 
 Texture2D DirectionalShadowMap : register(t2);
 Texture2D SpotShadowMap : register(t3);
-TextureCube<float> PointShadowMap : register(t4); // ← float 필수!
+TextureCubeArray<float> PointShadowMapArray : register(t4); // ← float 필수!
 
 
 SamplerComparisonState ShadowMapSampler : register(s2);
@@ -162,7 +162,7 @@ int GetMajorFaceIndex(float3 dir)
     return face;
 }
 
-float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos)
+float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos,int index)
 {
     // 1) 광원→조각 방향 (큐브맵 샘플링 좌표)
     float3 Dir = normalize(WorldPos - LightInfo.Position);
@@ -178,7 +178,7 @@ float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos)
     // 4) 바이어스
 
     // 5) 하드웨어 비교 샘플
-    float shadow = PointShadowMap.SampleCmpLevelZero(ShadowMapSampler, Dir, refDepth);
+    float shadow = PointShadowMapArray.SampleCmpLevelZero(ShadowMapSampler, float4(Dir, index), refDepth);
 
     return shadow;
 }
@@ -210,7 +210,7 @@ FLightingResult PointLight(int Index, float3 WorldPosition, float3 WorldNormal, 
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
 
-    float Shadow = PointShadowCalculation(LightInfo, WorldPosition);
+    float Shadow = PointShadowCalculation(LightInfo, WorldPosition, Index);
 
     Result.DiffuseFactor = DiffuseFactor * LightInfo.LightColor.rgb * Attenuation * LightInfo.Intensity * Shadow;
     Result.SpecularFactor = SpecularFactor * LightInfo.LightColor.rgb * Attenuation * LightInfo.Intensity * Shadow;
