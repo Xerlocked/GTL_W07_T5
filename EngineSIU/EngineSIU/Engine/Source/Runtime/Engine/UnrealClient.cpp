@@ -161,6 +161,17 @@ void FViewportResource::ClearRenderTargets(ID3D11DeviceContext* DeviceContext)
     /// ShadowMap
     DeviceContext->ClearDepthStencilView(DirectionalShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     DeviceContext->ClearDepthStencilView(SpotShadowMapDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    for (int32 i = 0; i < MAX_POINT_LIGHT; ++i) {
+        for(int32 Face=0; Face<6; ++Face)
+        if (PointLightFaceDSVs[i*6+Face]) {
+            DeviceContext->ClearDepthStencilView(
+                PointLightFaceDSVs[i],
+                D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+                1.0f, 0
+            );
+        }
+    }
 }
 
 void FViewportResource::ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type)
@@ -346,13 +357,22 @@ void FViewportResource::ReleaseDepthStencilResources()
         SpotShadowMapSRV->Release();
         SpotShadowMapSRV = nullptr;
     }
-     for (int i = 0; i < 6; ++i)
-    {
-        if (PointShadowMapFaceSRVs[i])
-        {
-            PointShadowMapFaceSRVs[i]->Release();
-            PointShadowMapFaceSRVs[i] = nullptr;
-        }
+    if (PointShadowMapArrayTexture) {
+        PointShadowMapArrayTexture->Release();
+        PointShadowMapArrayTexture = nullptr;
+    }
+    if (PointShadowMapArraySRV) {
+        PointShadowMapArraySRV->Release();
+        PointShadowMapArraySRV = nullptr;
+    }
+    for (auto& dsv : PointLightFaceDSVs) {
+        if (dsv) dsv->Release();
+        dsv = nullptr;
+    }
+
+    for (auto& srv : PointShadowMapFaceSRVs) {
+        if (srv) srv->Release();
+        srv = nullptr;
     }
 }
 
@@ -450,74 +470,84 @@ bool FViewport::bIsHovered(const FVector2D& InPoint) const
            (Rect.TopLeftY <= static_cast<float>(InPoint.Y) && static_cast<float>(InPoint.Y) <= Rect.TopLeftY + Rect.Height);
 }
 
-HRESULT FViewportResource::CreateCubeShadowMapResources()
-{
+HRESULT FViewportResource::CreateCubeShadowMapResources() {
     HRESULT hr = S_OK;
 
-    // 1. Texture2D (Cube)
+    // 큐브맵 배열 텍스처 생성
     D3D11_TEXTURE2D_DESC cubeDesc = {};
-    cubeDesc.Width = ShadowMapWidth;
-    cubeDesc.Height = ShadowMapHeight;
+    cubeDesc.Width = 1024;
+    cubeDesc.Height = 1024;
     cubeDesc.MipLevels = 1;
-    cubeDesc.ArraySize = 6;
+    cubeDesc.ArraySize = 6 * MAX_POINT_LIGHT; // 6면 × 라이트 수
     cubeDesc.Format = DXGI_FORMAT_R32_TYPELESS;
     cubeDesc.SampleDesc.Count = 1;
     cubeDesc.Usage = D3D11_USAGE_DEFAULT;
     cubeDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
     cubeDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&cubeDesc, nullptr, &PointShadowMapTexture);
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&cubeDesc, nullptr, &PointShadowMapArrayTexture);
     if (FAILED(hr)) return hr;
 
-    // 2. SRV
+    // 전체 큐브맵 배열 SRV 생성
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-    srvDesc.TextureCube.MipLevels = 1;
-    srvDesc.TextureCube.MostDetailedMip = 0;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+    srvDesc.TextureCubeArray.MipLevels = 1;
+    srvDesc.TextureCubeArray.NumCubes = MAX_POINT_LIGHT;
+    srvDesc.TextureCubeArray.MostDetailedMip = 0;
 
-    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(PointShadowMapTexture, &srvDesc, &PointShadowMapSRV);
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(
+        PointShadowMapArrayTexture, &srvDesc, &PointShadowMapArraySRV);
     if (FAILED(hr)) return hr;
 
-    // 3. DSV (Texture2DArray for cube faces)
+    // 라이트별 DSV 생성 (각 DSV는 6면을 한번에 처리)
     D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
     dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
     dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
     dsvDesc.Texture2DArray.MipSlice = 0;
     dsvDesc.Texture2DArray.ArraySize = 6;
-    dsvDesc.Texture2DArray.FirstArraySlice = 0;
 
-    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(PointShadowMapTexture, &dsvDesc, &PointShadowMapDSV);
-    if (FAILED(hr)) return hr;
+    for (int32 i = 0; i < MAX_POINT_LIGHT; ++i) {
+        for (int face = 0; face < 6; ++face) {
+            D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+            dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+            dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsvDesc.Texture2DArray.MipSlice = 0;
+            dsvDesc.Texture2DArray.ArraySize = 1;
+            dsvDesc.Texture2DArray.FirstArraySlice = i * 6 + face;
 
-    hr = CreatePointShadowMapFaceSRVs();
-    if (FAILED(hr)) return hr;
-    return hr;
-}
-
-HRESULT FViewportResource::CreatePointShadowMapFaceSRVs()
-{
-    HRESULT hr = S_OK;
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC desc = {};
-    desc.Format = DXGI_FORMAT_R32_FLOAT;
-    desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-    desc.Texture2DArray.MipLevels = 1;
-    desc.Texture2DArray.MostDetailedMip = 0;
-    desc.Texture2DArray.ArraySize = 1;
-
-    for (int i = 0; i < 6; ++i)
-    {
-        desc.Texture2DArray.FirstArraySlice = i;
-
-        hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(PointShadowMapTexture, &desc, &PointShadowMapFaceSRVs[i]);
-        if (FAILED(hr))
-        {
-            return hr;
+            hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(
+                PointShadowMapArrayTexture, &dsvDesc,
+                &PointLightFaceDSVs[i * 6 + face]); 
+            if (FAILED(hr)) return hr;
         }
     }
 
+    // 면별 SRV 생성
+    hr = CreatePointShadowMapFaceSRVs();
     return hr;
 }
 
+HRESULT FViewportResource::CreatePointShadowMapFaceSRVs() {
+    HRESULT hr = S_OK;
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC faceDesc = {};
+    faceDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    faceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+    faceDesc.Texture2DArray.MipLevels = 1;
+    faceDesc.Texture2DArray.ArraySize = 1;
+
+    for (int32 light = 0; light < MAX_POINT_LIGHT; ++light) {
+        for (int32 face = 0; face < 6; ++face) {
+            faceDesc.Texture2DArray.FirstArraySlice = light * 6 + face;
+            hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(
+                PointShadowMapArrayTexture,
+                &faceDesc,
+                &PointShadowMapFaceSRVs[light * 6 + face]
+            );
+            if (FAILED(hr)) return hr;
+        }
+    }
+    return hr;
+}
 
