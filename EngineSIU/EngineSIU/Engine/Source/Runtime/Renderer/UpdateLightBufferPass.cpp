@@ -144,7 +144,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     UINT OriginalViewportCount = 1;
     D3D11_VIEWPORT OriginalViewport = {};
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
-    Graphics->DeviceContext->GenerateMips(ViewportResource->GetSpotShadowMapSRV());
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), ViewportResource->GetSpotShadowMapDSV());
     int TileSize = 1024;
     int NumTilesPerRow = 4;
 
@@ -159,8 +159,6 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
         ShadowViewport.Height = TileSize;
 
         Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-        Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, ViewportResource->GetSpotShadowMapDSV());
-        
         if (SpotLightCount < MAX_SPOT_LIGHT)
         {
             //Light 기준 Camera Update
@@ -208,13 +206,13 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
         }
         SpotLightCount++;
     }
+    Graphics->DeviceContext->GenerateMips(ViewportResource->GetSpotShadowMapSRV());
 
     ShadowViewport.TopLeftX = 0;
     ShadowViewport.TopLeftY = 0;
     ShadowViewport.Width = FViewportResource::ShadowMapWidth;
     ShadowViewport.Height = FViewportResource::ShadowMapHeight;
     Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-    Graphics->DeviceContext->GenerateMips(ViewportResource->GetDirectionalShadowMapSRV());
     Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), ViewportResource->GetDirectionalShadowMapDSV());
 
     for (auto Light : DirectionalLights)
