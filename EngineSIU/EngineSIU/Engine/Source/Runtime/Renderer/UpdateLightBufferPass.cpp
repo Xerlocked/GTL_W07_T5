@@ -136,6 +136,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
     int DirectionalLightsCount = 0;
     int SpotLightCount = 0;
+    float TextureSize = 4096.0f;
 
     OnShaderReload();
     PrepareRenderState();
@@ -143,12 +144,21 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     UINT OriginalViewportCount = 1;
     D3D11_VIEWPORT OriginalViewport = {};
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
-    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
-
     Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), ViewportResource->GetSpotShadowMapDSV());
+    int TileSize = 1024;
+    int NumTilesPerRow = 4;
 
     for (auto Light : SpotLights)
     {
+        int x = SpotLightCount % NumTilesPerRow;
+        int y = SpotLightCount / NumTilesPerRow;
+
+        ShadowViewport.TopLeftX = x * TileSize;
+        ShadowViewport.TopLeftY = y * TileSize;
+        ShadowViewport.Width = TileSize;
+        ShadowViewport.Height = TileSize;
+
+        Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
         if (SpotLightCount < MAX_SPOT_LIGHT)
         {
             //Light 기준 Camera Update
@@ -160,7 +170,9 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
             
             Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
-            
+            Light->SetSUbUVScale(FVector2D(TileSize / TextureSize, TileSize / TextureSize));
+            Light->SetSUbUVOffset(FVector2D((x * TileSize) / TextureSize, (y * TileSize) / TextureSize));
+
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
                 FMath::DegreesToRadians(Light->GetOuterDegree() * 2.0f),
                 1.0f,
@@ -190,14 +202,17 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
                 UpdateObjectConstant(WorldMatrix);
 
                 RenderPrimitive(RenderData);
-            }
-
-            SpotLightCount++;
+            }        
         }
+        SpotLightCount++;
     }
-
     Graphics->DeviceContext->GenerateMips(ViewportResource->GetSpotShadowMapSRV());
 
+    ShadowViewport.TopLeftX = 0;
+    ShadowViewport.TopLeftY = 0;
+    ShadowViewport.Width = FViewportResource::ShadowMapWidth;
+    ShadowViewport.Height = FViewportResource::ShadowMapHeight;
+    Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
     Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), ViewportResource->GetDirectionalShadowMapDSV());
 
     for (auto Light : DirectionalLights)
@@ -304,6 +319,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
             Light->ViewMatrix[Face] = LightViewCamera.ViewMatrix;
             Light->ProjectionMatrix = LightViewCamera.ProjectionMatrix;
+            Light->index = lightindex;
 
             BufferManager->UpdateConstantBuffer(TEXT("FCameraConstantLightViewBuffer"), LightViewCamera);
 
@@ -344,6 +360,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].SubUVScale = Light->GetSubUVScale();
+            LightBufferData.SpotLights[SpotLightsCount].SubUVOffset = Light->GetSubUVOffset();
             SpotLightsCount++;
         }
     }

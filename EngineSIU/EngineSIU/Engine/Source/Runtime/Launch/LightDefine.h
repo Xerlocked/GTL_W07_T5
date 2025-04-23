@@ -33,7 +33,7 @@ struct FPointLightInfo
     int     Type;        // 라이트 타입 구분용 (예: 1 = Point)
     float   Intensity;   // 밝기
     float   Falloff;
-    float   Padding;  // 16바이트 정렬
+    int   Padding;  // 16바이트 정렬
 
     FMatrix LightViewMatrix[6];
     FMatrix LightProjectionMatrix;
@@ -56,6 +56,9 @@ struct FSpotLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
+
+    FVector2D SubUVScale;
+    FVector2D SubUVOffset;
 };
 
 struct alignas(16) FLightInfoBuffer
