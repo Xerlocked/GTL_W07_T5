@@ -342,6 +342,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.SpotLights[SpotLightsCount].Direction = Light->GetDirection();
             LightBufferData.SpotLights[SpotLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.SpotLights[SpotLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.SpotLights[SpotLightsCount].bCastShadow = Light->bCastShadow ? 1 : 0;
+            LightBufferData.SpotLights[SpotLightsCount].Sharpness = Light->ShadowSharpen;
             SpotLightsCount++;
         }
     }
@@ -352,6 +354,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
         {
             LightBufferData.PointLights[PointLightsCount] = Light->GetPointLightInfo();
             LightBufferData.PointLights[PointLightsCount].Position = Light->GetWorldLocation();
+            LightBufferData.PointLights[PointLightsCount].bCastShadow = Light->bCastShadow ? 1 : 0;
+            LightBufferData.PointLights[PointLightsCount].Sharpness = Light->ShadowSharpen;
             for(int i = 0; i<6; i++)
             LightBufferData.PointLights[PointLightsCount].LightViewMatrix[i] = Light->ViewMatrix[i];
             LightBufferData.PointLights[PointLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
@@ -367,6 +371,8 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
             LightBufferData.Directional[DirectionalLightsCount].Direction = Light->GetDirection();
             LightBufferData.Directional[DirectionalLightsCount].LightViewMatrix = Light->ViewMatrix[0];
             LightBufferData.Directional[DirectionalLightsCount].LightProjectionMatrix = Light->ProjectionMatrix;
+            LightBufferData.Directional[DirectionalLightsCount].bCastShadow = Light->bCastShadow ? 1 : 0;
+            LightBufferData.Directional[DirectionalLightsCount].Sharpness = Light->ShadowSharpen;
             DirectionalLightsCount++;
         }
     }
@@ -387,6 +393,7 @@ void FUpdateLightBufferPass::UpdateLightBuffer() const
     LightBufferData.AmbientLightsCount = AmbientLightsCount;
     LightBufferData.ShadowMapWidth = FViewportResource::ShadowMapWidth;
     LightBufferData.ShadowMapHeight = FViewportResource::ShadowMapHeight;
+    LightBufferData.FilterMode = FEngineLoop::ResourceManager.ShaderFilterMode;
 
     BufferManager->UpdateConstantBuffer(TEXT("FLightInfoBuffer"), LightBufferData);
 }

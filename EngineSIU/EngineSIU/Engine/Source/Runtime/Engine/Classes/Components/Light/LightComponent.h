@@ -28,12 +28,14 @@ public:
     bool bCastShadow = true;
 
     /**
-     * Todo: Maybe this properties move to the ULightComponent 
+     * Todo: Maybe this properties move to the ULightComponent
+     * Sharpen 뺴고는 구현 안되었습니다. 죄송합니다. 사죄의 의미로 500연차를 준비했습니다.
+     * Coupon: JUNGLE500
      */
-    int32 ShadowResolutionScale = 4096.f;
+    int32 ShadowResolutionScale = 4096;
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
-    int32 ShadowSharpen = 0.0f;
+    int32 ShadowSharpen = 0;
     
 protected:
 

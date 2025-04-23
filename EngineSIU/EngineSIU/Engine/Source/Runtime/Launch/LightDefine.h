@@ -21,6 +21,10 @@ struct FDirectionalLightInfo
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
+
+    int bCastShadow;
+    int Sharpness;
+    FVector2D Pad;
 };
 
 struct FPointLightInfo
@@ -33,10 +37,13 @@ struct FPointLightInfo
     int     Type;        // 라이트 타입 구분용 (예: 1 = Point)
     float   Intensity;   // 밝기
     float   Falloff;
-    int   Padding;  // 16바이트 정렬
+    int  bCastShadow;
 
     FMatrix LightViewMatrix[6];
     FMatrix LightProjectionMatrix;
+
+    int Sharpness;
+    FVector Pad;
 };
 
 struct FSpotLightInfo
@@ -53,6 +60,10 @@ struct FSpotLightInfo
     float   InnerRad; // cos(inner angle)
     float   OuterRad; // cos(outer angle)
     float   Falloff;
+
+    int bCastShadow;
+    int Sharpness;
+    FVector2D Pad;
 
     FMatrix LightViewMatrix;
     FMatrix LightProjectionMatrix;
@@ -72,5 +83,6 @@ struct alignas(16) FLightInfoBuffer
 
     float ShadowMapWidth;
     float ShadowMapHeight;
-    FVector2D ShadowMapPadding;
+    int FilterMode;
+    float Pad;
 };

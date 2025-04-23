@@ -31,6 +31,10 @@ struct FDirectionalLightInfo
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
+
+    int bCastShadow;
+    int Sharpness;
+    float2 Pad;
 };
 
 struct FPointLightInfo
@@ -43,7 +47,10 @@ struct FPointLightInfo
     int Type;
     float Intensity;
     float Falloff;
-    float Padding;
+    int bCastShadow;
+
+    int Sharpness;
+    float3 Pad;
     
     row_major matrix LightViewMatrix[6];
     row_major matrix LightProjectionMatrix;
@@ -63,6 +70,10 @@ struct FSpotLightInfo
     float InnerRad;
     float OuterRad;
     float Falloff;
+
+    int bCastShadow;
+    int Sharpness;
+    float2 Pad;
 
     row_major matrix LightViewMatrix;
     row_major matrix LightProjectionMatrix;
@@ -87,7 +98,8 @@ cbuffer Lighting : register(b0)
 
     float ShadowMapWidth;
     float ShadowMapHeight;
-    float2 ShadowMapPadding;
+    int FilterMode;
+    float Pad;
 };
 
 float2 NDCToUV(float3 NDC)
@@ -97,37 +109,56 @@ float2 NDCToUV(float3 NDC)
     return UV;
 }
 
-float CalculateShadow(Texture2D ShadowMap, float2 ShadowMapUV, float LightDistance)
+bool InRange(float val, float min, float max)
+{
+    return (min <= val && val <= max);
+}
+
+float CalculateShadowByPCF(Texture2D ShadowMap, float2 ShadowMapUV, int Sharpness, int LightDepth)
+{
+    // 1) 초기화
+    float Shadow = 0.0f;
+
+    // 2) 오프셋: 텍셀 크기
+    float2 TexelSize = float2(1.0f / ShadowMapWidth, 1.0f / ShadowMapHeight);
+
+    // 3×3 커널 순회
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            float2 SampleUV = ShadowMapUV + TexelSize * float2(i, j);
+
+            // UV 범위 체크
+            if (all(SampleUV >= 0.0f) && all(SampleUV <= 1.0f))
+            {
+                // VSM 텍스처의 R 채널(평균 깊이)만 비교
+                float SampleMean = ShadowMap.SampleLevel(ShadowMapSampler, SampleUV, Sharpness).r;
+                Shadow += (LightDepth <= SampleMean) ? 1.0f : 0.0f;
+            }
+            else
+            {
+                // 범위 밖은 빛을 받는 것으로 처리
+                Shadow += 1.0f;
+            }
+        }
+    }
+
+    // 9개 샘플 평균
+    return Shadow / 9.0f;
+}
+
+
+float CalculateShadowByVSM(Texture2D ShadowMap, float2 ShadowMapUV, float LightDistance, int Sharpness)
 {
     // 0에 가까울수록 그림자 1이면 빛 그대로받는거
     float Shadow = 1.f;
-    ///////////////////////////////////////////////////////////////
-    /// PCF
-    // float OffsetX = 1.f/ShadowMapWidth;
-    // float OffsetY = 1.f/ShadowMapHeight;
-    // for (int i=-1;i<=1;i++)
-    // {
-    //     for (int j=-1;j<=1;j++)
-    //     {
-    //         float2 SampleUV = {
-    //             ShadowMapUV.x + OffsetX * i,
-    //             ShadowMapUV.y + OffsetY * j
-    //         };
-    //         if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
-    //         {
-    //             Shadow += DirectionalShadowMap.SampleLevel(ShadowMapSampler, SampleUV, 0).r;
-    //         }else
-    //         {
-    //             Shadow += 1.f;
-    //         }
-    //     }
-    // }
-    // Shadow /= 9;
+
 
     ///////////////////////////////////////////////////////////////
     /// VSM
     ///  // One-tailed inequality valid if t > Moments.x
-    float2 moments = ShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, 1).rg;
+    float2 moments = ShadowMap.SampleLevel(ShadowMapSampler, ShadowMapUV, Sharpness).rg;
     float mean = moments.x; //mean depth 평균
     float mean2 = moments.y; //mean2 detph^2 평균
     
@@ -249,7 +280,7 @@ FLightingResult PointLight(int Index, float3 WorldPosition, float3 WorldNormal, 
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
 
-    float Shadow = PointShadowCalculation(LightInfo, WorldPosition, Index);
+    float Shadow = LightInfo.bCastShadow ? PointShadowCalculation(LightInfo, WorldPosition, Index) : 1;
 
     Result.DiffuseFactor = DiffuseFactor * LightInfo.LightColor.rgb * Attenuation * LightInfo.Intensity * Shadow;
     Result.SpecularFactor = SpecularFactor * LightInfo.LightColor.rgb * Attenuation * LightInfo.Intensity * Shadow;
@@ -282,11 +313,23 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
     float2 SpotShadowMapUV = NDCToUV(SpotShadowMapNDC);
 
     //float SpotLightDistance = (SpotLightView.z * -1.0f) / SpotLightInfo.AttenuationRadius;
-     float SpotLightDistance = SpotShadowMapNDC.z;
-    
-    float SpotLightShadow = CalculateShadow(SpotShadowMap, SpotShadowMapUV, SpotLightDistance);
+    float SpotLightDistance = SpotShadowMapNDC.z;
 
-    Result.DiffuseFactor = DiffuseFactor * SpotLightInfo.Intensity * SpotLightInfo.LightColor.rgb * Attenuation * ConeAttenuation * SpotLightShadow;
+    float Shadow = 1.0f;
+
+    if (SpotLightInfo.bCastShadow)
+    {
+        if (FilterMode == 0)
+        {
+            Shadow = CalculateShadowByVSM(SpotShadowMap, SpotShadowMapUV, SpotLightDistance, SpotLightInfo.Sharpness);
+        }
+
+        if (FilterMode == 1)
+        {
+            Shadow = CalculateShadowByPCF(SpotShadowMap, SpotShadowMapUV, SpotLightInfo.Sharpness, SpotLightDistance);
+        }
+    }
+    Result.DiffuseFactor = DiffuseFactor * SpotLightInfo.Intensity * SpotLightInfo.LightColor.rgb * Attenuation * ConeAttenuation * Shadow;
 
 #ifdef LIGHTING_MODEL_LAMBERT
     return Result;
@@ -294,7 +337,7 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
 
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
-    Result.SpecularFactor = SpecularFactor * SpotLightInfo.LightColor.rgb * SpotLightInfo.Intensity * Attenuation * ConeAttenuation * SpotLightShadow;
+    Result.SpecularFactor = SpecularFactor * SpotLightInfo.LightColor.rgb * SpotLightInfo.Intensity * Attenuation * ConeAttenuation * Shadow;
     return Result;
 }
 
@@ -312,8 +355,23 @@ FLightingResult DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldN
     float4 LightClipPos = mul(LightView, DirectionalLightInfo.LightProjectionMatrix);
     float3 ShadowMapNDC = LightClipPos.xyz / LightClipPos.w;
     float2 ShadowMapUV = NDCToUV(ShadowMapNDC);
-    float LightDistance = ShadowMapNDC.z;  
-    float Shadow = CalculateShadow(DirectionalShadowMap, ShadowMapUV, LightDistance);
+    float LightDistance = ShadowMapNDC.z;
+
+    float Shadow = 1.0f;
+
+    if (DirectionalLightInfo.bCastShadow)
+    {
+        if (FilterMode == 0)
+        {
+            Shadow = CalculateShadowByVSM(DirectionalShadowMap, ShadowMapUV, LightDistance, DirectionalLightInfo.Sharpness);
+        }
+
+        if (FilterMode == 1)
+        {
+            Shadow = CalculateShadowByPCF(DirectionalShadowMap, ShadowMapUV, DirectionalLightInfo.Sharpness, LightDistance);
+        }
+    }
+    
     Result.DiffuseFactor = DiffuseFactor * DirectionalLightInfo.Intensity * DirectionalLightInfo.LightColor.rgb * Shadow;
 #ifdef LIGHTING_MODEL_LAMBERT
     return Result;
