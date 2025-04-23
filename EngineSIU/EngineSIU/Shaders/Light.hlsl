@@ -14,6 +14,8 @@
 Texture2D DirectionalShadowMap : register(t2);
 Texture2D SpotShadowMap : register(t3);
 TextureCubeArray<float2> PointShadowMapArray : register(t4); // ← float 필수!
+Texture2D DirectionalShadowCompareMap : register(t5);
+Texture2D SpotShadowCompareMap : register(t6);
 
 SamplerState ShadowMapSampler : register(s2);
 SamplerComparisonState ShadowMapCompareSampler : register(s3);
@@ -118,7 +120,7 @@ bool InRange(float val, float min, float max)
     return (min <= val && val <= max);
 }
 
-float CalculateShadowByPCF(Texture2D ShadowMap, float2 ShadowMapUV)
+float CalculateShadowByPCF(Texture2D ShadowMap, float2 ShadowMapUV, float Distance)
 {
     // 1) 초기화
     float Shadow = 0.0f;
@@ -136,7 +138,7 @@ float CalculateShadowByPCF(Texture2D ShadowMap, float2 ShadowMapUV)
              };
              if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
              {
-                 Shadow += ShadowMap.SampleCmpLevelZero(ShadowMapCompareSampler, SampleUV, 0).r;
+                 Shadow += ShadowMap.SampleCmpLevelZero(ShadowMapCompareSampler, SampleUV, Distance).r;
              }else
              {
                  Shadow += 1.f;
@@ -276,7 +278,7 @@ FLightingResult PointLight(int Index, float3 WorldPosition, float3 WorldNormal, 
 
         if (FilterMode == 1)
         {
-            Shadow = CalculateShadowByPCF(SpotShadowMap, PointShadowUV);
+            Shadow = CalculateShadowByPCF(SpotShadowMap, PointShadowUV, PointLightDistance);
         }
     }
 
@@ -325,7 +327,7 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
 
         if (FilterMode == 1)
         {
-            Shadow = CalculateShadowByPCF(SpotShadowMap, SpotShadowMapUV);
+            Shadow = CalculateShadowByPCF(SpotShadowCompareMap, SpotShadowMapUV, SpotLightDistance);
         }
     }
     Result.DiffuseFactor = DiffuseFactor * SpotLightInfo.Intensity * SpotLightInfo.LightColor.rgb * Attenuation * ConeAttenuation * Shadow;
@@ -368,7 +370,7 @@ FLightingResult DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldN
 
         if (FilterMode == 1)
         {
-            Shadow = CalculateShadowByPCF(DirectionalShadowMap, ShadowMapUV);
+            Shadow = CalculateShadowByPCF(DirectionalShadowCompareMap, ShadowMapUV, LightDistance);
         }
     }
     

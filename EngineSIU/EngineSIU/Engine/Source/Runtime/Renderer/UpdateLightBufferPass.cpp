@@ -145,6 +145,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     D3D11_VIEWPORT OriginalViewport = {};
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), ViewportResource->GetSpotShadowMapDSV());
+    
     int TileSize = 1024;
     int NumTilesPerRow = 4;
 

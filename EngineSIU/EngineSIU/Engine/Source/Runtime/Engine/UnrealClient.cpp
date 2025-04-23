@@ -261,7 +261,7 @@ HRESULT FViewportResource::CreateShadowMapResources()
     ShadowMapTextureDepthDesc.CPUAccessFlags = 0;
     ShadowMapTextureDepthDesc.SampleDesc.Count = 1;
     ShadowMapTextureDepthDesc.SampleDesc.Quality = 0;
-    ShadowMapTextureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    ShadowMapTextureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
     ShadowMapTextureDepthDesc.Height = (UINT)ShadowMapHeight;
     ShadowMapTextureDepthDesc.Width = (UINT)ShadowMapWidth;
     hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDepthDesc, nullptr, &DirectionalShadowMapDepthTexture);
@@ -270,6 +270,24 @@ HRESULT FViewportResource::CreateShadowMapResources()
         return hr;
     }
     hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDepthDesc, nullptr, &SpotShadowMapDepthTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC ShadowMapCompareSRVDesc;
+    ZeroMemory(&ShadowMapCompareSRVDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+    ShadowMapCompareSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    ShadowMapCompareSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    ShadowMapCompareSRVDesc.Texture2D.MipLevels = 1;
+    
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(DirectionalShadowMapDepthTexture, &ShadowMapCompareSRVDesc, &DirectionalShadowMapCompareSRV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    hr = FEngineLoop::GraphicDevice.Device->CreateShaderResourceView(SpotShadowMapDepthTexture, &ShadowMapCompareSRVDesc, &SpotShadowMapCompareSRV);
     if (FAILED(hr))
     {
         return hr;
@@ -408,6 +426,18 @@ void FViewportResource::ReleaseShadowMapResources()
     {
         SpotShadowMapDSV->Release();
         SpotShadowMapDSV = nullptr;
+    }
+
+    if (SpotShadowMapCompareSRV)
+    {
+        SpotShadowMapCompareSRV->Release();
+        SpotShadowMapCompareSRV = nullptr;
+    }
+
+    if (DirectionalShadowMapSRV)
+    {
+        DirectionalShadowMapSRV->Release();
+        DirectionalShadowMapSRV = nullptr;
     }
     
     for (int i = 0; i < 6; ++i)
