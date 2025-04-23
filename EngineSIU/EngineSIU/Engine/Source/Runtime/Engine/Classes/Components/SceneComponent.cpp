@@ -83,9 +83,7 @@ void USceneComponent::DestroyComponent()
 
 FVector USceneComponent::GetForwardVector()
 {
-	FVector Forward = FVector(1.f, 0.f, 0.0f);
-	Forward = JungleMath::FVectorRotate(Forward, RelativeRotation);
-	return Forward;
+    return GetWorldMatrix().GetAxis(0).GetSafeNormal();
 }
 
 FVector USceneComponent::GetRightVector()

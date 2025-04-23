@@ -152,6 +152,7 @@ public:
     void CameraMoveUp(float InValue);
     void CameraRotateYaw(float InValue);
     void CameraRotatePitch(float InValue);
+    void CameraLookAt(const FVector& InDirection);
     void PivotMoveRight(float InValue);
     void PivotMoveUp(float InValue);
 
@@ -183,6 +184,8 @@ public:
 
     // Flag Test Code
     static void SetOthoSize(float InValue);
+
+    void SetCameraLocation(const FVector& InLocation);
 
 private: // Input
     POINT PrevMousePos;

@@ -60,4 +60,5 @@ private:
 
     //Shadow
     ID3D11SamplerState* ShadowMapSampler;
+    ID3D11SamplerState* ShadowMapCompareSampler;
 };

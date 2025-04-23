@@ -22,14 +22,21 @@ public:
     bool showFPS = false;
     bool showMemory = false;
     bool showRender = false;
+    bool showLight = false;
 
     void ToggleStat(const std::string& command);
-    void Render(ID3D11DeviceContext* context, UINT width, UINT height) const;
+    void Render(ID3D11DeviceContext* context, UINT width, UINT height);
 
 private:
     float CalculateFPS() const;
 
     void DrawTextOverlay(const std::string& text, int x, int y) const;
+
+    int32 AllActorCount = 0;
+
+    int32 DirectionalLightCount = 0;
+    int32 PointLightCount = 0;
+    int32 SpotLightCount = 0;
 };
 
 class Console : public IWindowToggleable

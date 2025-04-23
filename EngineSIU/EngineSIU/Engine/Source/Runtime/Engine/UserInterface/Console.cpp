@@ -2,7 +2,14 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "Components/Light/DirectionalLightComponent.h"
+#include "Components/Light/PointLightComponent.h"
+#include "Components/Light/SpotLightComponent.h"
+#include "D3D11RHI/DXDShaderManager.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Actor.h"
 #include "UnrealEd/EditorViewportClient.h"
+#include "World/World.h"
 
 
 void StatOverlay::ToggleStat(const std::string& command)
@@ -22,10 +29,16 @@ void StatOverlay::ToggleStat(const std::string& command)
         showFPS = false;
         showMemory = false;
         showRender = false;
+        AllActorCount = 0;
+    }
+    else if (command == "stat light")
+    {
+        showLight = true;
+        showRender = true;
     }
 }
 
-void StatOverlay::Render(ID3D11DeviceContext* context, UINT width, UINT height) const
+void StatOverlay::Render(ID3D11DeviceContext* context, UINT width, UINT height)
 {
 
     if (!showRender)
@@ -69,6 +82,36 @@ void StatOverlay::Render(ID3D11DeviceContext* context, UINT width, UINT height) 
         ImGui::Text("Allocated Object Memory: %llu B", FPlatformMemory::GetAllocationBytes<EAT_Object>());
         ImGui::Text("Allocated Container Count: %llu", FPlatformMemory::GetAllocationCount<EAT_Container>());
         ImGui::Text("Allocated Container memory: %llu B", FPlatformMemory::GetAllocationBytes<EAT_Container>());
+    }
+
+    if (showLight)
+    {
+        DirectionalLightCount = 0;
+        PointLightCount = 0;
+        SpotLightCount = 0;
+
+        // Todo: 매 프레임 반복을 하는데 이걸 좀 고쳐줘
+        for (const auto& Actor : GEngine->ActiveWorld->GetActiveLevel()->Actors )
+        {
+            if (Actor->GetComponentByClass<USpotLightComponent>())
+            {
+                SpotLightCount++;
+            }
+
+            if (Actor->GetComponentByClass<UPointLightComponent>())
+            {
+                PointLightCount++;
+            }
+
+            if (Actor->GetComponentByClass<UDirectionalLightComponent>())
+            {
+                DirectionalLightCount++;
+            }
+        }
+        
+        ImGui::Text("Directional Light Count: %d", DirectionalLightCount);
+        ImGui::Text("Point Light Count: %d", PointLightCount);
+        ImGui::Text("Spot Light Count: %d", SpotLightCount);
     }
     ImGui::PopStyleColor();
     ImGui::End();
@@ -252,6 +295,18 @@ void Console::ExecuteCommand(const std::string& command)
     }
     else if (command.starts_with("stat ")) { // stat 명령어 처리
         overlay.ToggleStat(command);
+    }
+    else if (command.starts_with("shadow_filter "))
+    {
+        if (command == "shadow_filter VSM")
+        {
+            FEngineLoop::ResourceManager.ShaderFilterMode = 0;
+        }
+
+        if (command == "shadow_filter PCF")
+        {
+            FEngineLoop::ResourceManager.ShaderFilterMode = 1;
+        }
     }
     else {
         AddLog(LogLevel::Error, "Unknown command: %s", command.c_str());

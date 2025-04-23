@@ -14,6 +14,10 @@ public:
     void GetProperties(TMap<FString, FString>& OutProperties) const override;
     void SetProperties(const TMap<FString, FString>& InProperties) override;
 
+    /**
+     * 
+     * @return Degree
+     */
     FVector GetDirection();
 
     const FSpotLightInfo& GetSpotLightInfo() const;
