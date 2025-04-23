@@ -211,21 +211,17 @@ int GetMajorFaceIndex(float3 dir)
 
 float PointShadowCalculation(FPointLightInfo LightInfo, float3 WorldPos,int index)
 {
-    // 1) 광원→조각 방향 (큐브맵 샘플링 좌표)
+
     float3 Dir = normalize(WorldPos - LightInfo.Position);
 
-    // 2) 해당 face의 뷰·프로젝션 적용
     int face = GetMajorFaceIndex(Dir);
     float4 posVS = mul(float4(WorldPos,1), LightInfo.LightViewMatrix[face]);
     float4 posCS = mul(posVS,          LightInfo.LightProjectionMatrix);
 
-    // 3) 클립스페이스 깊이
     float refDepth = posCS.z / posCS.w;
 
-    // 4) 바이어스
+    float shadow = PointShadowMapArray.SampleLevel(ShadowMapSampler, float4(Dir, index), 0).r;
 
-    // 5) 하드웨어 비교 샘플
-    float shadow = PointShadowMapArray.SampleCmpLevelZero(ShadowMapSampler, float4(Dir, index), refDepth);
 
     return shadow;
 }
