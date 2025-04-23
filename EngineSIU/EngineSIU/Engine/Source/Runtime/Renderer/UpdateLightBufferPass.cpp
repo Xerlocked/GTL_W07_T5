@@ -138,7 +138,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
     Graphics->DeviceContext->RSGetViewports(&OriginalViewportCount, &OriginalViewport);
     Graphics->DeviceContext->RSSetViewports(1, &ShadowViewport);
 
-    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), nullptr);
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetSpotShadowMapRTV(), ViewportResource->GetSpotShadowMapDSV());
 
     for (auto Light : SpotLights)
     {
@@ -151,11 +151,9 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
             FCameraConstantBuffer LightViewCameraConstant;
             LightViewCameraConstant.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, TargetPos, FVector(0, 0, 1));
-
-
+            
             Light->ViewMatrix[0] = LightViewCameraConstant.ViewMatrix;
             
-
             LightViewCameraConstant.ProjectionMatrix = JungleMath::CreateProjectionMatrix(
                 FMath::DegreesToRadians(Light->GetOuterDegree() * 2.0f),
                 1.0f,
@@ -191,7 +189,9 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
         }
     }
 
-    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), nullptr);
+    Graphics->DeviceContext->GenerateMips(ViewportResource->GetSpotShadowMapSRV());
+
+    Graphics->DeviceContext->OMSetRenderTargets(1, &ViewportResource->GetDirectionalShadowMapRTV(), ViewportResource->GetDirectionalShadowMapDSV());
 
     for (auto Light : DirectionalLights)
     {
@@ -288,7 +288,7 @@ void FUpdateLightBufferPass::BakeShadowMap(const std::shared_ptr<FEditorViewport
 
             float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
             Graphics->DeviceContext->ClearRenderTargetView(FaceRTV, ClearColor);
-            Graphics->DeviceContext->OMSetRenderTargets(1, &FaceRTV, nullptr);
+            Graphics->DeviceContext->OMSetRenderTargets(1, &FaceRTV, ViewportResource->GetPointShadowMapDSV());
 
             FCameraConstantBuffer LightViewCamera;
             LightViewCamera.ViewMatrix = JungleMath::CreateViewMatrix(LightPos, LightPos + LookDirections[Face], UpDirections[Face]);

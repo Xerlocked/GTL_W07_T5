@@ -75,13 +75,22 @@ public:
     ID3D11RenderTargetView*& GetDirectionalShadowMapRTV() { return DirectionalShadowMapRTV; }
     ID3D11ShaderResourceView*& GetDirectionalShadowMapSRV() { return DirectionalShadowMapSRV; }
 
+    ID3D11Texture2D*& GetDirectionalShadowMapDepthTexture(){ return DirectionalShadowMapDepthTexture; }
+    ID3D11DepthStencilView*& GetDirectionalShadowMapDSV() { return DirectionalShadowMapDSV; }
+    
     ID3D11Texture2D*& GetSpotShadowMapTexture(){ return SpotShadowMapTexture; }
     ID3D11RenderTargetView*& GetSpotShadowMapRTV() { return SpotShadowMapRTV; }
     ID3D11ShaderResourceView*& GetSpotShadowMapSRV() { return SpotShadowMapSRV; }
 
+    ID3D11Texture2D*& GetSpotShadowMapDepthTexture(){ return SpotShadowMapDepthTexture; }
+    ID3D11DepthStencilView*& GetSpotShadowMapDSV() { return SpotShadowMapDSV; }
+
     ID3D11Texture2D*& GetPointLightMapTexture() { return PointShadowMapTexture;}
-    ID3D11DepthStencilView*& GetPointShadowMapDSV() { return PointShadowMapDSV;}
+    ID3D11RenderTargetView*& GetPointShadowMapRTV() { return PointShadowMapRTV; }
     ID3D11ShaderResourceView*& GetPointShadowMapSRV() { return PointShadowMapSRV; }
+
+    ID3D11Texture2D*& GetPointShadowMapDepthTexture(){ return PointShadowMapDepthTexture; }
+    ID3D11DepthStencilView*& GetPointShadowMapDSV() { return PointShadowMapDSV; }
 
     ID3D11Texture2D*& GetGizmoDepthStencilTexture() { return GizmoDepthStencilTexture; }
     ID3D11DepthStencilView*& GetGizmoDepthStencilView() { return GizmoDepthStencilView; }
@@ -129,14 +138,22 @@ private:
     ID3D11RenderTargetView* DirectionalShadowMapRTV = nullptr;
     ID3D11ShaderResourceView* DirectionalShadowMapSRV = nullptr;
 
+    ID3D11Texture2D* DirectionalShadowMapDepthTexture = nullptr;
+    ID3D11DepthStencilView* DirectionalShadowMapDSV = nullptr;
+    
     ID3D11Texture2D* SpotShadowMapTexture = nullptr;
     ID3D11RenderTargetView* SpotShadowMapRTV = nullptr;
     ID3D11ShaderResourceView* SpotShadowMapSRV = nullptr;
-    
+
+    ID3D11Texture2D* SpotShadowMapDepthTexture = nullptr;
+    ID3D11DepthStencilView* SpotShadowMapDSV = nullptr;
 
     ID3D11Texture2D* PointShadowMapTexture = nullptr;
-    ID3D11DepthStencilView* PointShadowMapDSV = nullptr;
+    ID3D11RenderTargetView* PointShadowMapRTV = nullptr;
     ID3D11ShaderResourceView* PointShadowMapSRV = nullptr;
+
+    ID3D11Texture2D* PointShadowMapDepthTexture = nullptr;
+    ID3D11DepthStencilView* PointShadowMapDSV = nullptr;
 
     ID3D11ShaderResourceView* PointShadowMapFaceSRVs[6] = {};
 

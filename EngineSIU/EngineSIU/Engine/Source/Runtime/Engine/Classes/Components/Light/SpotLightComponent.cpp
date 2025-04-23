@@ -6,13 +6,14 @@
 USpotLightComponent::USpotLightComponent()
 {
     SpotLightInfo.Position = GetWorldLocation();
-    SpotLightInfo.AttenuationRadius = 0.0f;
+    
+    SpotLightInfo.AttenuationRadius = 20.0f;
     SpotLightInfo.Direction = USceneComponent::GetForwardVector();
     SpotLightInfo.LightColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    SpotLightInfo.Intensity = 1000.0f;
+    SpotLightInfo.Intensity = 1000.f;
     SpotLightInfo.Type = ELightType::SPOT_LIGHT;
-    SpotLightInfo.InnerRad = 0;
-    SpotLightInfo.OuterRad = 0;
+    SpotLightInfo.InnerRad = 15.f;
+    SpotLightInfo.OuterRad = 30.f;
     SpotLightInfo.Falloff = 0.01f;
 }
 

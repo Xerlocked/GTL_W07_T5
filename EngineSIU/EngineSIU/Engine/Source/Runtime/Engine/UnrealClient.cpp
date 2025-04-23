@@ -170,6 +170,9 @@ void FViewportResource::ClearRenderTargets(ID3D11DeviceContext* DeviceContext)
     
     DeviceContext->ClearRenderTargetView(DirectionalShadowMapRTV, ClearColor);
     DeviceContext->ClearRenderTargetView(SpotShadowMapRTV, ClearColor);
+
+    DeviceContext->ClearDepthStencilView(DirectionalShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+    DeviceContext->ClearDepthStencilView(SpotShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 void FViewportResource::ClearRenderTarget(ID3D11DeviceContext* DeviceContext, EResourceType Type)
@@ -191,10 +194,6 @@ std::array<float, 4> FViewportResource::GetClearColor(EResourceType Type) const
 
 HRESULT FViewportResource::CreateShadowMapResources()
 {
-    
-    ////////////////////
-    /// shadow depth view 생성
-
     D3D11_TEXTURE2D_DESC ShadowMapTextureDesc;
     ZeroMemory(&ShadowMapTextureDesc, sizeof(D3D11_TEXTURE2D_DESC));
     ShadowMapTextureDesc.Format = DXGI_FORMAT_R32G32_TYPELESS;
@@ -248,6 +247,45 @@ HRESULT FViewportResource::CreateShadowMapResources()
         return hr;
     }
     hr = FEngineLoop::GraphicDevice.Device->CreateRenderTargetView(SpotShadowMapTexture, &ShadowMapRenderTargetViewDesc, &SpotShadowMapRTV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    D3D11_TEXTURE2D_DESC ShadowMapTextureDepthDesc;
+    ZeroMemory(&ShadowMapTextureDepthDesc, sizeof(D3D11_TEXTURE2D_DESC));
+    ShadowMapTextureDepthDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    ShadowMapTextureDepthDesc.MipLevels = 0;
+    ShadowMapTextureDepthDesc.ArraySize = 1;
+    ShadowMapTextureDepthDesc.Usage = D3D11_USAGE_DEFAULT;
+    ShadowMapTextureDepthDesc.CPUAccessFlags = 0;
+    ShadowMapTextureDepthDesc.SampleDesc.Count = 1;
+    ShadowMapTextureDepthDesc.SampleDesc.Quality = 0;
+    ShadowMapTextureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    ShadowMapTextureDepthDesc.Height = (UINT)ShadowMapHeight;
+    ShadowMapTextureDepthDesc.Width = (UINT)ShadowMapWidth;
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDepthDesc, nullptr, &DirectionalShadowMapDepthTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateTexture2D(&ShadowMapTextureDepthDesc, nullptr, &SpotShadowMapDepthTexture);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    D3D11_DEPTH_STENCIL_VIEW_DESC ShadowMapDepthStencilViewDesc;
+    ZeroMemory(&ShadowMapDepthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+    ShadowMapDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    ShadowMapDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    ShadowMapDepthStencilViewDesc.Texture2D.MipSlice = 0;
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(DirectionalShadowMapDepthTexture, &ShadowMapDepthStencilViewDesc, &DirectionalShadowMapDSV);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    hr = FEngineLoop::GraphicDevice.Device->CreateDepthStencilView(SpotShadowMapDepthTexture, &ShadowMapDepthStencilViewDesc, &SpotShadowMapDSV);
     if (FAILED(hr))
     {
         return hr;
@@ -346,7 +384,32 @@ void FViewportResource::ReleaseShadowMapResources()
         SpotShadowMapSRV->Release();
         SpotShadowMapSRV = nullptr;
     }
-     for (int i = 0; i < 6; ++i)
+
+    if (DirectionalShadowMapDepthTexture)
+    {
+        DirectionalShadowMapDepthTexture->Release();
+        DirectionalShadowMapDepthTexture = nullptr;
+    }
+
+    if (DirectionalShadowMapDSV)
+    {
+        DirectionalShadowMapDSV->Release();
+        DirectionalShadowMapDSV = nullptr;
+    }
+
+    if (SpotShadowMapDepthTexture)
+    {
+        SpotShadowMapDepthTexture->Release();
+        SpotShadowMapDepthTexture = nullptr;
+    }
+
+    if (SpotShadowMapDSV)
+    {
+        SpotShadowMapDSV->Release();
+        SpotShadowMapDSV = nullptr;
+    }
+    
+    for (int i = 0; i < 6; ++i)
     {
         if (PointShadowMapFaceSRVs[i])
         {
