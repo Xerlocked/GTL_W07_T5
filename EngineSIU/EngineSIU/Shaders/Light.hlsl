@@ -16,6 +16,7 @@ Texture2D SpotShadowMap : register(t3);
 TextureCubeArray<float2> PointShadowMapArray : register(t4); // ← float 필수!
 
 SamplerState ShadowMapSampler : register(s2);
+SamplerComparisonState ShadowMapCompareSampler : register(s3);
 
 struct FAmbientLightInfo
 {
@@ -48,12 +49,12 @@ struct FPointLightInfo
     float Intensity;
     float Falloff;
     int bCastShadow;
-
-    int Sharpness;
-    float3 Pad;
     
     row_major matrix LightViewMatrix[6];
     row_major matrix LightProjectionMatrix;
+
+    int Sharpness;
+    float3 Pad;
 };
 
 struct FSpotLightInfo
@@ -117,34 +118,33 @@ bool InRange(float val, float min, float max)
     return (min <= val && val <= max);
 }
 
-float CalculateShadowByPCF(Texture2D ShadowMap, float2 ShadowMapUV, int Sharpness)
+float CalculateShadowByPCF(Texture2D ShadowMap, float2 ShadowMapUV)
 {
     // 1) 초기화
     float Shadow = 0.0f;
-
-    /// PCF
-    float OffsetX = 1.f/ShadowMapWidth;
-    float OffsetY = 1.f/ShadowMapHeight;
-    for (int i=-1;i<=1;i++)
-    {
-        for (int j=-1;j<=1;j++)
-        {
-            float2 SampleUV = {
-                ShadowMapUV.x + OffsetX * i,
-                ShadowMapUV.y + OffsetY * j
-            };
-            if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
-            {
-                Shadow += ShadowMap.SampleLevel(ShadowMapSampler, SampleUV, Sharpness).r;
-            }else
-            {
-                Shadow += 1.f;
-            }
-        }
-    }
-
-    // 9개 샘플 평균
-    return Shadow / 9.0f;
+    /////////////////////////////////////////////////////////////
+     // PCF
+     float OffsetX = 1.f/ShadowMapWidth;
+     float OffsetY = 1.f/ShadowMapHeight;
+     for (int i=-1;i<=1;i++)
+     {
+         for (int j=-1;j<=1;j++)
+         {
+             float2 SampleUV = {
+                 ShadowMapUV.x + OffsetX * i,
+                 ShadowMapUV.y + OffsetY * j
+             };
+             if (InRange(SampleUV.x, 0.f, 1.f) && InRange(SampleUV.y, 0.f, 1.f))
+             {
+                 Shadow += ShadowMap.SampleCmpLevelZero(ShadowMapCompareSampler, SampleUV, 0).r;
+             }else
+             {
+                 Shadow += 1.f;
+             }
+         }
+     }
+     Shadow /= 9;
+    return Shadow;
 }
 
 
@@ -257,14 +257,28 @@ FLightingResult PointLight(int Index, float3 WorldPosition, float3 WorldNormal, 
     float4 PointLightView = mul(float4(WorldPosition, 1.0), LightInfo.LightViewMatrix[face]);
     float4 PointLightClipPos = mul(PointLightView, LightInfo.LightProjectionMatrix);
     float3 PointShadowMapNDC = PointLightClipPos.xyz / PointLightClipPos.w;
-
+    float2 PointShadowUV = NDCToUV(PointShadowMapNDC);
     float PointLightDistance = PointShadowMapNDC.z;
     
     float3 ViewDir = normalize(WorldViewPosition - WorldPosition);
     float SpecularFactor = CalculateSpecular(WorldNormal, LightDir, ViewDir, Material.SpecularScalar);
 
-    float2 moments = PointShadowMapArray.SampleLevel(ShadowMapSampler, float4(Dir, Index), 1).rg;
-    float Shadow = CalculateShadowByVSM(moments, PointLightDistance);
+    float2 moments = PointShadowMapArray.SampleLevel(ShadowMapSampler, float4(Dir, Index), LightInfo.Sharpness).rg;
+    
+    float Shadow = 1.0f;
+    
+    if (LightInfo.bCastShadow)
+    {
+        if (FilterMode == 0)
+        {
+            Shadow = CalculateShadowByVSM(moments, PointLightDistance);
+        }
+
+        if (FilterMode == 1)
+        {
+            Shadow = CalculateShadowByPCF(SpotShadowMap, PointShadowUV);
+        }
+    }
 
     Result.DiffuseFactor = DiffuseFactor * LightInfo.LightColor.rgb * Attenuation * LightInfo.Intensity * Shadow;
     Result.SpecularFactor = SpecularFactor * LightInfo.LightColor.rgb * Attenuation * LightInfo.Intensity * Shadow;
@@ -311,7 +325,7 @@ FLightingResult SpotLight(int Index, float3 WorldPosition, float3 WorldNormal, f
 
         if (FilterMode == 1)
         {
-            Shadow = CalculateShadowByPCF(SpotShadowMap, SpotShadowMapUV, SpotLightInfo.Sharpness);
+            Shadow = CalculateShadowByPCF(SpotShadowMap, SpotShadowMapUV);
         }
     }
     Result.DiffuseFactor = DiffuseFactor * SpotLightInfo.Intensity * SpotLightInfo.LightColor.rgb * Attenuation * ConeAttenuation * Shadow;
@@ -354,7 +368,7 @@ FLightingResult DirectionalLight(int nIndex, float3 WorldPosition, float3 WorldN
 
         if (FilterMode == 1)
         {
-            Shadow = CalculateShadowByPCF(DirectionalShadowMap, ShadowMapUV, DirectionalLightInfo.Sharpness);
+            Shadow = CalculateShadowByPCF(DirectionalShadowMap, ShadowMapUV);
         }
     }
     

@@ -158,12 +158,14 @@ void FStaticMeshRenderPass::Initialize(FDXDBufferManager* InBufferManager, FGrap
 
     ShadowMapSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     ShadowMapSamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    
+    Graphics->Device->CreateSamplerState(&ShadowMapSamplerDesc, &ShadowMapSampler);
 
     // Comparison
-    // comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-    // comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-
-    Graphics->Device->CreateSamplerState(&ShadowMapSamplerDesc, &ShadowMapSampler);
+    ShadowMapSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    ShadowMapSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+    
+    Graphics->Device->CreateSamplerState(&ShadowMapSamplerDesc, &ShadowMapCompareSampler);
 }
 
 void FStaticMeshRenderPass::PrepareRender()
@@ -298,6 +300,8 @@ void FStaticMeshRenderPass::PrepareShadowMap(const std::shared_ptr<FEditorViewpo
     ID3D11ShaderResourceView* PointLightShadowMapSRV = ViewportResource->GetPointShadowMapArraySRV();
 
     Graphics->DeviceContext->PSSetSamplers(2, 1, &ShadowMapSampler);
+
+    Graphics->DeviceContext->PSSetSamplers(3, 1, &ShadowMapCompareSampler);
     
     Graphics->DeviceContext->PSSetShaderResources(2, 1, &DirectionalLightShadowMapSRV);
     
